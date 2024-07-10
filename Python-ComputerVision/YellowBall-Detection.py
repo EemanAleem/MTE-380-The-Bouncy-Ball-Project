@@ -1,14 +1,15 @@
-import cv2
+import cv2 as cv
 import numpy as np
 from time import sleep
 
+# '***' stands for things to modify for your own webcam, display, and ball if needed
+
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
-    # Start capturing video from the webcam
-    cap = cv2.VideoCapture(0)
-    # The first parameters 3 and 4 describe the width and height of 600 pixels
-    cap.set(3, 600)
-    cap.set(4, 600)
+    # Start capturing video from the webcam. If multiple webcams connected, you may use 1,2, etc.
+    cap = cv.VideoCapture(0)
+    # CAP_PROP_FPS sets the frame rate of the webcam to 30 fps here
+    cap.set(cv.CAP_PROP_FPS, 30)
     
     while True:
         # Read a frame from the webcam
@@ -17,51 +18,51 @@ def detect_yellow_ball():
             print("Failed to grab frame")
             break
         
-        #crop a 200x200 region from the center of the frame (pixels 200-400 in the X/Y)
-        frame = frame[200:400, 200:400]
+        # Set the image resolution to 480x480 *** Note increasing resolution increases processing power used, and may slow down video feed
+        frame = cv.resize(frame, (480, 480))
 
         # Convert the frame from BGR to HSV color space to easily identify a colour
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) 
+        hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV) 
 
-        # Define the range of yellow color in HSV [Hue, Saturation, Value]
+        # Define the range of yellow color in HSV [Hue, Saturation, Value] ***
+        # You can get these values via the method explained in the tutorial. You can also change the variable names to suit your color ball
         lower_yellow = np.array([20, 100, 100])
         upper_yellow = np.array([30, 255, 255])
 
         # Threshold the HSV image to get only yellow colors
-        # Pixels in the range are set to white (255) and those that aren't are set to black (0)
-        mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        # Pixels in the range are set to white (255) and those that aren't are set to black (0), creating a binary mask 
+        mask = cv.inRange(hsv, lower_yellow, upper_yellow)
 
         # Find contours in the mask
         # RETR_TREE retrieves all hierarchical contours and organizes them
         # CHAIN_APPROX_SIMPLE compresses horizontal, vertical, and diagonal segments, leaving only their end points
-        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
         # Find the index of the largest contour
         if contours:
-            # Determines the larget contour size using the cv2.contour Area function
-            largest_contour = max(contours, key=cv2.contourArea)
+            # Determines the larget contour size using the cv.contour Area function
+            largest_contour = max(contours, key=cv.contourArea)
             # Computes the minimum enclosing circle aroudn the largest contour
-            ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-            if radius > 10:  # Only consider large enough objects
+            ((x, y), radius) = cv.minEnclosingCircle(largest_contour)
+            if radius > 10:  # Only consider large enough objects *** If it only detects a small portion of your ball, you can test higher radius values to capture more of the ball
+                # Draw a circle around the yellow ball
+                cv.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
-                cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)  # (image to draw dot, x,y pixel coordinates, radius in pixels, RGB values in this case red, -1 indicates to fill the circle)
+                cv.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)  # (image to draw dot on, x,y pixel coordinates, radius in pixels, RGB values in this case red, -1 indicates to fill the circle)
                 # Display the position of the ball
                 print(f"Yellow ball detected at position: ({int(x)}, {int(y)})")
 
         # Display the resulting frame
-        cv2.imshow('frame', frame)
-
-        # Delay 0.5 seconds
-        sleep(0.5)
+        cv.imshow('frame', frame)
 
         # Break the loop when 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
     # Release the capture when everything is done
     cap.release()
     # Close all windows
-    cv2.destroyAllWindows()
+    cv.destroyAllWindows()
 
 # Call the function to detect the yellow ball
 detect_yellow_ball()
