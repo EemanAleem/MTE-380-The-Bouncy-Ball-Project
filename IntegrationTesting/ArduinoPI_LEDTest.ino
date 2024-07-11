@@ -3,7 +3,7 @@
 const int ledPin = 13; 
  
 void setup() {
-  // Join I2C bus as slave with address 8
+  // Arduino joins I2C bus as slave with address 8
   Wire.begin(0x8);
   
   // Call receiveEvent function when data received                
@@ -17,7 +17,7 @@ void setup() {
 // Function that executes whenever data is received from master device, the Pi 5
 void receiveEvent(int howMany) {
   while (Wire.available()) { // Loop until I2C connection unavailable
-    char y = Wire.read(); // receive byte as a character
+    int c = Wire.read(); // receive byte as an integer
     digitalWrite(ledPin, c); // turn on/off LED based on byte information
   }
 }
@@ -25,3 +25,4 @@ void receiveEvent(int howMany) {
 void loop() {
   delay(100); // Keep waiting for data
 }
+
