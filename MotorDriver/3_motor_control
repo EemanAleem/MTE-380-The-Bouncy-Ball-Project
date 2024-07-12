@@ -1,0 +1,69 @@
+#include <AccelStepper.h>
+
+int directionMultiplier = 1; // = 1: positive direction, = -1: negative direction
+const int MAX_STEPPERS = 3;
+
+// Create instances of AccelStepper for each motor
+AccelStepper stepper1(AccelStepper::DRIVER, 3, 2);
+AccelStepper stepper2(AccelStepper::DRIVER, 6, 5);
+AccelStepper stepper3(AccelStepper::DRIVER, 9, 8);
+
+// Array of pointers to AccelStepper objects
+AccelStepper* steppers[MAX_STEPPERS];
+
+long receivedSteps[MAX_STEPPERS] = [2400,2400,2400];//Number of steps
+long receivedSpeed[MAX_STEPPERS] = [1200,1200,1200]; //Steps / second
+long receivedAcceleration[MAX_STEPPERS] = [500,500,500]; //Steps / second^2
+
+void setup() {
+  Serial.begin(9600);
+
+  // Assign pointers to each stepper object
+  steppers[0] = &stepper1;
+  steppers[1] = &stepper2;
+  steppers[2] = &stepper3;
+
+  // Set maximum speed and acceleration for each stepper motor
+  stepper1.setMaxSpeed(1200); // Speed = Steps / second
+  stepper1.setAcceleration(800); // Acceleration = Steps /(second)^2
+  stepper2.setMaxSpeed(1200); // Speed = Steps / second
+  stepper2.setAcceleration(800); // Acceleration = Steps /(second)^2
+  stepper3.setMaxSpeed(1200); // Speed = Steps / second
+  stepper3.setAcceleration(800); // Acceleration = Steps /(second)^2
+
+  // Disable outputs for all steppers initially
+  for (int i = 0; i < MAX_STEPPERS; i++) {
+    steppers[i]->disableOutputs(); // Use -> to access member functions through pointers
+  }
+
+  // Move steppers to their home position
+  GoHome();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly
+}
+
+void GoHome() {
+  for (int i = 0; i < MAX_STEPPERS; i++) {
+    if (steppers[i]->currentPosition() == 0) {
+      Serial.println("Motor " + String(i + 1) + " is already at home position.");
+      steppers[i]->disableOutputs(); // Disable power if already at home
+    } else {
+      steppers[i]->setMaxSpeed(400); // Set speed manually to 400 steps/sec (1 rev/sec)
+      steppers[i]->moveTo(0); // Move to absolute position 0
+    }
+  }
+}
+
+void RotateAbsolute {
+
+  for (int i = 0; i < MAX_STEPPERS;i++) {
+    if (receivedSpeed[i] < 0)
+      directionMultiplier = -1;
+    else
+      directionMultiplier = 1;
+   steppers[i]->setMaxSpeed(receivedSpeed[i]); //set speed
+   steppers[i]->moveTo(directionMultiplier * receivedSteps[i]); //set relative distance 
+  }
+}
