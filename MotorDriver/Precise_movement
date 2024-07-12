@@ -29,7 +29,7 @@ char receivedCommand;
 //-------------------------------------------------------------------------------
 int directionMultiplier = 1; // = 1: positive direction, = -1: negative direction
 bool newData, runallowed = false; // booleans for new data from serial, and runallowed flag
-AccelStepper stepper(1, 3, 2);// direction Digital 9 (CCW), pulses Digital 8 (CLK)
+AccelStepper stepper(1, 3, 2);// direction Digital 3 (CCW), pulses Digital 2 (CLK)
  
 void setup()
 {
@@ -38,7 +38,7 @@ void setup()
     Serial.println("Send 'C' for printing the commands.");
  
     //setting up some default values for maximum speed and maximum acceleration
-    Serial.println("Default speed: 400 steps/s, default acceleration: 800 steps/s^2.");
+    Serial.println("Default speed: 1200 steps/s, default acceleration: 800 steps/s^2.");
     stepper.setMaxSpeed(1200); //SPEED = Steps / second
     stepper.setAcceleration(800); //ACCELERATION = Steps /(second)^2
  
