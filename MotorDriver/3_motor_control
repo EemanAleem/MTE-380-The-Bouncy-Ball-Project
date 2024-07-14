@@ -11,9 +11,9 @@ AccelStepper stepper3(AccelStepper::DRIVER, 9, 8);
 // Array of pointers to AccelStepper objects
 AccelStepper* steppers[MAX_STEPPERS];
 
-long receivedSteps[MAX_STEPPERS] = [2400,2400,2400];//Number of steps
-long receivedSpeed[MAX_STEPPERS] = [1200,1200,1200]; //Steps / second
-long receivedAcceleration[MAX_STEPPERS] = [500,500,500]; //Steps / second^2
+long receivedSteps[MAX_STEPPERS] = {2400,2400,2400};//Number of steps
+long receivedSpeed[MAX_STEPPERS] = {1200,1200,1200}; //Steps / second
+long receivedAcceleration[MAX_STEPPERS] = {500,500,500}; //Steps / second^2
 
 void setup() {
   Serial.begin(9600);
@@ -34,7 +34,7 @@ void setup() {
   // Disable outputs for all steppers initially
   for (int i = 0; i < MAX_STEPPERS; i++) {
     steppers[i]->disableOutputs(); //disable power
-    stepper.setCurrentPosition(0); //Reset current position. "new home"            
+    steppers[i]->setCurrentPosition(0); //Reset current position. "new home"            
     Serial.print("The current position is updated to: "); //Print message
   }
 }
@@ -44,7 +44,7 @@ void loop() {
     for (int i = 0; i < MAX_STEPPERS; i++) {
       //assume data is read as Angle_M1 Speed_M1 Accel_M1 Angle_M2 Speed_M2 Accel_M2 Angle_M3 Speed_M3 Accel_M3
       receivedSteps[i] = Serial.parseFloat() * 3200 / 360; //value for the steps
-      receivedSpeed[[i]] = Serial.parseFloat();
+      receivedSpeed[i] = Serial.parseFloat();
       receivedAcceleration[i] = Serial.parseFloat();
 
       RotateAbsolute();
@@ -52,8 +52,8 @@ void loop() {
   }
   else {
      for (int i = 0; i < MAX_STEPPERS; i++) {
-      stepper[i]->stop(); //stop motor
-      stepper[i]->disableOutputs(); //disable power
+      steppers[i]->stop(); //stop motor
+      steppers[i]->disableOutputs(); //disable power
      }
   }
 
@@ -79,7 +79,7 @@ void RotateAbsolute() {
     else
       directionMultiplier = 1;
    steppers[i]->setMaxSpeed(receivedSpeed[i]); //set speed
-   steppers[i]->setAcceleration(receivedAcceleratio[i]]); //set acceleration
+   steppers[i]->setAcceleration(receivedAcceleration[i]); //set acceleration
    steppers[i]->moveTo(directionMultiplier * receivedSteps[i]); //set relative distance 
   }
 }
