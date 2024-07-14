@@ -24,24 +24,39 @@ void setup() {
   steppers[2] = &stepper3;
 
   // Set maximum speed and acceleration for each stepper motor
-  stepper1.setMaxSpeed(1200); // Speed = Steps / second
+  stepper1.setMaxSpeed(3200); // Speed = Steps / second
   stepper1.setAcceleration(800); // Acceleration = Steps /(second)^2
-  stepper2.setMaxSpeed(1200); // Speed = Steps / second
+  stepper2.setMaxSpeed(3200); // Speed = Steps / second
   stepper2.setAcceleration(800); // Acceleration = Steps /(second)^2
-  stepper3.setMaxSpeed(1200); // Speed = Steps / second
+  stepper3.setMaxSpeed(3200); // Speed = Steps / second
   stepper3.setAcceleration(800); // Acceleration = Steps /(second)^2
 
   // Disable outputs for all steppers initially
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    steppers[i]->disableOutputs(); // Use -> to access member functions through pointers
+    steppers[i]->disableOutputs(); //disable power
+    stepper.setCurrentPosition(0); //Reset current position. "new home"            
+    Serial.print("The current position is updated to: "); //Print message
   }
-
-  // Move steppers to their home position
-  GoHome();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly
+  if (Serial.available() > 0) {
+    for (int i = 0; i < MAX_STEPPERS; i++) {
+      //assume data is read as Angle_M1 Speed_M1 Accel_M1 Angle_M2 Speed_M2 Accel_M2 Angle_M3 Speed_M3 Accel_M3
+      receivedSteps[i] = Serial.parseFloat() * 3200 / 360; //value for the steps
+      receivedSpeed[[i]] = Serial.parseFloat();
+      receivedAcceleration[i] = Serial.parseFloat();
+
+      RotateAbsolute();
+    }
+  }
+  else {
+     for (int i = 0; i < MAX_STEPPERS; i++) {
+      stepper[i]->stop(); //stop motor
+      stepper[i]->disableOutputs(); //disable power
+     }
+  }
+
 }
 
 void GoHome() {
@@ -56,7 +71,7 @@ void GoHome() {
   }
 }
 
-void RotateAbsolute {
+void RotateAbsolute() {
 
   for (int i = 0; i < MAX_STEPPERS;i++) {
     if (receivedSpeed[i] < 0)
@@ -64,6 +79,7 @@ void RotateAbsolute {
     else
       directionMultiplier = 1;
    steppers[i]->setMaxSpeed(receivedSpeed[i]); //set speed
+   steppers[i]->setAcceleration(receivedAcceleratio[i]]); //set acceleration
    steppers[i]->moveTo(directionMultiplier * receivedSteps[i]); //set relative distance 
   }
 }
