@@ -1,85 +1,117 @@
 #include <AccelStepper.h>
 
-int directionMultiplier = 1; // = 1: positive direction, = -1: negative direction
+// Define constants for each motor
 const int MAX_STEPPERS = 3;
+const int STEP_PINS[MAX_STEPPERS] = {3, 6, 9};   // Step pins for motors 1, 2, 3
+const int DIR_PINS[MAX_STEPPERS] = {2, 5, 8};    // Direction pins for motors 1, 2, 3
 
 // Create instances of AccelStepper for each motor
-AccelStepper stepper1(AccelStepper::DRIVER, 3, 2);
-AccelStepper stepper2(AccelStepper::DRIVER, 6, 5);
-AccelStepper stepper3(AccelStepper::DRIVER, 9, 8);
+AccelStepper steppers[MAX_STEPPERS] = {
+  AccelStepper(AccelStepper::DRIVER, STEP_PINS[0], DIR_PINS[0]),
+  AccelStepper(AccelStepper::DRIVER, STEP_PINS[1], DIR_PINS[1]),
+  AccelStepper(AccelStepper::DRIVER, STEP_PINS[2], DIR_PINS[2])
+};
 
-// Array of pointers to AccelStepper objects
-AccelStepper* steppers[MAX_STEPPERS];
+// Array to store received parameters for each motor
+long receivedSteps[MAX_STEPPERS] = {220,220,220}; // Initialize with 0 steps
+long receivedSpeed[MAX_STEPPERS] = {200,200,200}; // Initialize with 0 speed
+long receivedAcceleration[MAX_STEPPERS] = {200,200,200}; // Initialize with 0 acceleration
 
-long receivedSteps[MAX_STEPPERS] = {2400,2400,2400};//Number of steps
-long receivedSpeed[MAX_STEPPERS] = {1200,1200,1200}; //Steps / second
-long receivedAcceleration[MAX_STEPPERS] = {500,500,500}; //Steps / second^2
-
+// Variables for managing serial input and commands
+char receivedCommand;
+bool newData = false;
+bool runAllowed = false;
+int directionMultiplier = -1; // = 1: positive direction, = -1: negative direction
 void setup() {
   Serial.begin(9600);
 
-  // Assign pointers to each stepper object
-  steppers[0] = &stepper1;
-  steppers[1] = &stepper2;
-  steppers[2] = &stepper3;
-
   // Set maximum speed and acceleration for each stepper motor
-  stepper1.setMaxSpeed(3200); // Speed = Steps / second
-  stepper1.setAcceleration(800); // Acceleration = Steps /(second)^2
-  stepper2.setMaxSpeed(3200); // Speed = Steps / second
-  stepper2.setAcceleration(800); // Acceleration = Steps /(second)^2
-  stepper3.setMaxSpeed(3200); // Speed = Steps / second
-  stepper3.setAcceleration(800); // Acceleration = Steps /(second)^2
-
-  // Disable outputs for all steppers initially
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    steppers[i]->disableOutputs(); //disable power
-    steppers[i]->setCurrentPosition(0); //Reset current position. "new home"            
-    Serial.print("The current position is updated to: "); //Print message
+    steppers[i].setMaxSpeed(3200); // Speed = Steps / second
+    steppers[i].setAcceleration(200); // Acceleration = Steps /(second)^2
+    steppers[i].disableOutputs(); // Disable outputs initially
+    steppers[i].setCurrentPosition(0); // Reset current position to 0
+    Serial.print("Motor ");
+    Serial.print(i + 1);
+    Serial.print(" current position: ");
+    Serial.println(steppers[i].currentPosition());
   }
+  home();
 }
 
 void loop() {
-  if (Serial.available() > 0) {
-    for (int i = 0; i < MAX_STEPPERS; i++) {
-      //assume data is read as Angle_M1 Speed_M1 Accel_M1 Angle_M2 Speed_M2 Accel_M2 Angle_M3 Speed_M3 Accel_M3
-      receivedSteps[i] = Serial.parseFloat() * 3200 / 360; //value for the steps
-      receivedSpeed[i] = Serial.parseFloat();
-      receivedAcceleration[i] = Serial.parseFloat();
-
-      RotateAbsolute();
-    }
-  }
-  else {
-     for (int i = 0; i < MAX_STEPPERS; i++) {
-      steppers[i]->stop(); //stop motor
-      steppers[i]->disableOutputs(); //disable power
-     }
-  }
-
+  checkSerial(); // Check for commands from serial monitor
+  runMotors(); // Execute movements of the motors
 }
 
-void GoHome() {
+void home() {
+  runAllowed = true;
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    if (steppers[i]->currentPosition() == 0) {
-      Serial.println("Motor " + String(i + 1) + " is already at home position.");
-      steppers[i]->disableOutputs(); // Disable power if already at home
-    } else {
-      steppers[i]->setMaxSpeed(400); // Set speed manually to 400 steps/sec (1 rev/sec)
-      steppers[i]->moveTo(0); // Move to absolute position 0
+    Serial.print("Motor ");
+    Serial.print(i + 1);
+    Serial.print(" - Received Steps: ");
+    Serial.print(receivedSteps[i]);
+    Serial.print(", Speed: ");
+    Serial.print(receivedSpeed[i]);
+    Serial.print(", Acceleration: ");
+    Serial.println(receivedAcceleration[i]);
+  
+    steppers[i].setAcceleration(receivedAcceleration[i]);
+    steppers[i].setMaxSpeed(receivedSpeed[i]);
+    steppers[i].moveTo(directionMultiplier * receivedSteps[i]);
+  }
+  delay(500);
+  runMotors();
+  for (int i = 0; i < MAX_STEPPERS; i++) {
+  steppers[i].disableOutputs(); // Disable outputs initially
+  steppers[i].setCurrentPosition(0); // Reset current position to 0
+  Serial.println("Homing Complete");
+  }
+}
+void runMotors() {
+  if (runAllowed) {
+    for (int i = 0; i < MAX_STEPPERS; i++) {
+      steppers[i].enableOutputs(); // Enable outputs for all motors
+      steppers[i].run(); // Step each motor
+    }
+  } else {
+    for (int i = 0; i < MAX_STEPPERS; i++) {
+      steppers[i].disableOutputs(); // Disable outputs for all motors
+      Serial.println("Cannot Run");
     }
   }
 }
 
-void RotateAbsolute() {
+void checkSerial() {
+  //recieves char followed by steps,speed,accel for each stepper (ex "p200 200 200 200 200 200 200 200 200)
+  if (Serial.available() > 0) {
+    receivedCommand = Serial.read();
+    newData = true;
 
-  for (int i = 0; i < MAX_STEPPERS;i++) {
-    if (receivedSpeed[i] < 0)
-      directionMultiplier = -1;
-    else
-      directionMultiplier = 1;
-   steppers[i]->setMaxSpeed(receivedSpeed[i]); //set speed
-   steppers[i]->setAcceleration(receivedAcceleration[i]); //set acceleration
-   steppers[i]->moveTo(directionMultiplier * receivedSteps[i]); //set relative distance 
+    if (newData) {
+          for (int i = 0; i < MAX_STEPPERS; i++) {
+            receivedSteps[i] = Serial.parseFloat();
+            receivedSpeed[i] = Serial.parseFloat();
+            receivedAcceleration[i] = Serial.parseFloat();
+            Serial.print("Motor ");
+                Serial.print(i + 1);
+                Serial.print(" - Received Steps: ");
+                Serial.print(receivedSteps[i]);
+                Serial.print(", Speed: ");
+                Serial.print(receivedSpeed[i]);
+                Serial.print(", Acceleration: ");
+                Serial.println(receivedAcceleration[i]);
+
+            steppers[i].setAcceleration(receivedAcceleration[i]);
+            steppers[i].setMaxSpeed(receivedSpeed[i]);
+            if (receivedSteps[i] < 0)
+              directionMultiplier = 1;
+            else
+              directionMultiplier = -1;
+              
+            steppers[i].moveTo(directionMultiplier * receivedSteps[i]);
+          }
+          runAllowed = true;
+    }
   }
 }
