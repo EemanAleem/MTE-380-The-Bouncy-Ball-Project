@@ -26,7 +26,7 @@ void setup() {
 
   // Set maximum speed and acceleration for each stepper motor
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    steppers[i].setMaxSpeed(1200); // Speed = Steps / second
+    steppers[i].setMaxSpeed(100000); // Speed = Steps / second
     steppers[i].setAcceleration(800); // Acceleration = Steps /(second)^2
     steppers[i].disableOutputs(); // Disable outputs initially
     steppers[i].setCurrentPosition(0); // Reset current position to 0
@@ -36,6 +36,7 @@ void setup() {
     Serial.println(steppers[i].currentPosition());
   }
   home();
+  Serial.println("Out of home");
 }
 
 void loop() {
@@ -46,7 +47,7 @@ void loop() {
 void home() {
   runAllowed = true;
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    receivedSteps[i] = 300;
+    receivedSteps[i] = 200;
     receivedSpeed[i] = 800;
     receivedAcceleration[i] = 100;
   }
@@ -82,14 +83,13 @@ void home() {
 
 void runMotors() {
   if (runAllowed) {
-    while (steppers[0].currentPosition()!=-300) {
-      Serial.println("Current position: ");
-      Serial.println(steppers[0].currentPosition());
+    while (steppers[0].currentPosition() != directionMultiplier*receivedSteps[0]) {
       for (int i = 0; i < MAX_STEPPERS; i++) {
         steppers[i].enableOutputs(); // Enable outputs for all motors
         steppers[i].run(); // Step each motor
       }
     }
+    runAllowed=false;
   }
   if (!runAllowed) {
     for (int i = 0; i < MAX_STEPPERS; i++) {
@@ -101,8 +101,10 @@ void runMotors() {
 
 void checkSerial() {
   //recieves char followed by steps,speed,accel for each stepper (ex "p200 200 200 200 200 200 200 200 200)
+  Serial.println("In checkSerial");
   if (Serial.available() > 0) {
     newData = true;
+    runAllowed = true;
 
     if (newData) {
       for (int i = 0; i < MAX_STEPPERS; i++) {
@@ -120,7 +122,7 @@ void checkSerial() {
         Serial.println(receivedAcceleration[i]);
 
         steppers[i].setAcceleration(receivedAcceleration[i]);
-        steppers[i].setMaxSpeed(receivedSpeed[i]);
+        steppers[i].setSpeed(receivedSpeed[i]);
         if (receivedSteps[i] < 0)
           directionMultiplier = 1;
         else
@@ -128,16 +130,6 @@ void checkSerial() {
           
         steppers[i].moveTo(directionMultiplier * receivedSteps[i]);
       }
-      runAllowed = true;
     }
   }
 }
-
-// bool anyMotorRunning() {
-//   for (int i = 0; i < MAX_STEPPERS; i++) {
-    // if (steppers[i].distanceToGo() != 0) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
