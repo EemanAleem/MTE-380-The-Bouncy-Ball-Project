@@ -13,14 +13,14 @@ AccelStepper steppers[MAX_STEPPERS] = {
 };
 
 // Array to store received parameters for each motor
-long receivedSteps[MAX_STEPPERS] = {200,200,200}; // Initialize with 0 steps
+long receivedSteps[MAX_STEPPERS] = {300,300,300}; // Initialize with 0 steps
 long receivedSpeed[MAX_STEPPERS] = {3200,3200,3200}; // Initialize with 0 speed
-long receivedAcceleration[MAX_STEPPERS] = {200,200,200}; // Initialize with 0 acceleration
-long initialPosition[MAX_STEPPERS] = {0, 0, 0};
+long receivedAcceleration[MAX_STEPPERS] = {300,300,300}; // Initialize with 0 acceleration
 // Variables for managing serial input and commands
 bool newData = false;
 bool runAllowed = false;
 int directionMultiplier = -1; // = 1: positive direction, = -1: negative direction
+
 void setup() {
   Serial.begin(9600);
 
@@ -36,6 +36,20 @@ void setup() {
     Serial.println(steppers[i].currentPosition());
   }
   home();
+  delay(5000);
+
+//UNECCESSARY TEST BELOW
+/*  for (int i = 0; i < MAX_STEPPERS; i++) {
+    steppers[i].disableOutputs(); // Disable outputs initially
+    steppers[i].setCurrentPosition(0); // Reset current position to 0
+    Serial.print("Motor ");
+    Serial.print(i + 1);
+    Serial.print(" current position after homing: ");
+    Serial.println(steppers[i].currentPosition());
+  }
+  Serial.println("Homing DONE");
+  Serial.println(steppers[0].currentPosition()); */
+  
 }
 
 void loop() {
@@ -62,13 +76,6 @@ void home() {
   runMotors();
   delay(300);
   
-  for (int i = 0; i < MAX_STEPPERS; i++) {
-    steppers[i].setCurrentPosition(initialPosition[i]);
-    Serial.print("Motor ");
-    Serial.print(i + 1);
-    Serial.print(" current position after homing: ");
-    Serial.println(steppers[i].currentPosition());
-  }
 }
 void runMotors() {
   if (runAllowed) {
@@ -104,7 +111,7 @@ void checkSerial() {
             Serial.println(receivedAcceleration[i]);
 
         steppers[i].setAcceleration(receivedAcceleration[i]);
-        steppers[i].setSpeed(receivedSpeed[i]);
+        steppers[i].setMaxSpeed(receivedSpeed[i]);
         if (receivedSteps[i] < 0)
           directionMultiplier = 1;
         else
