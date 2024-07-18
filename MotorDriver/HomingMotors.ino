@@ -20,7 +20,6 @@ long receivedAcceleration[MAX_STEPPERS] = {1, 0, 0}; // Initialize with 0 accele
 // Variables for managing serial input and commands
 bool newData = false;
 bool runAllowed = false;
-int directionMultiplier = -1; // = 1: positive direction, = -1: negative direction
 
 void setup() {
   Serial.begin(9600);
@@ -56,7 +55,7 @@ void home() {
   for (int i = 0; i < MAX_STEPPERS; i++) {
     steppers[i].setAcceleration(receivedAcceleration[i]);
     steppers[i].setMaxSpeed(receivedSpeed[i]);
-    steppers[i].move(directionMultiplier * receivedSteps[i]);
+    steppers[i].move(-1 * receivedSteps[i]);
 
     Serial.print("Motor ");
     Serial.print(i + 1);
@@ -83,7 +82,7 @@ void home() {
 
 void runMotors() {
   if (runAllowed) {
-    while (steppers[0].currentPosition() != directionMultiplier*receivedSteps[0]) {
+    while (steppers[0].currentPosition() != -1*receivedSteps[0]) {
       for (int i = 0; i < MAX_STEPPERS; i++) {
         steppers[i].enableOutputs(); // Enable outputs for all motors
         steppers[i].run(); // Step each motor
@@ -108,9 +107,9 @@ void checkSerial() {
     float tempSteps, tempSpeed, tempAccel;
 
     for (int i = 0; i < MAX_STEPPERS; i++) {
-      tempSteps = Serial.parseFloat();
-      tempSpeed = Serial.parseFloat();
-      tempAccel = Serial.parseFloat();
+      tempSteps = Serial.parseInt();
+      tempSpeed = Serial.parseInt();
+      tempAccel = Serial.parseInt();
 
       if (tempSteps != 0 && tempSpeed != 0 && tempAccel != 0) {
         receivedSteps[i] = tempSteps;
@@ -128,15 +127,11 @@ void checkSerial() {
 
       steppers[i].setAcceleration(receivedAcceleration[i]);
       steppers[i].setMaxSpeed(receivedSpeed[i]);
-      if (receivedSteps[i] < 0)
-        directionMultiplier = 1;
-      else
-        directionMultiplier = -1;
           
-      steppers[i].moveTo(directionMultiplier * receivedSteps[i]);
+      steppers[i].moveTo(-1 * receivedSteps[i]);
     }
   }
-  while (Serial.available() > 0 && Serial.parseFloat() == 0 && Serial.parseFloat() == 0) {
-    Serial.parseFloat(); // Discard any extra floats
+  while (Serial.available() > 0 && Serial.parseInt() == 0 && Serial.parseInt() == 0) {
+    Serial.parseInt(); // Discard any extra floats
   }
 }
