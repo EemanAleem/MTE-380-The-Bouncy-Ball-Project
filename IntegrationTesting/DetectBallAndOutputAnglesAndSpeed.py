@@ -173,9 +173,9 @@ def PID(setpointX, setpointY):
         speed[B] = B_CurrentPosition
         speed[C] = C_CurrentPosition
     else:
-        pos[0] = theta(A,4.5,0,0) * angToStep
-        pos[1] = theta(B,4.5,0,0) * angToStep
-        pos[2] = theta(C,4.5,0,0) * angToStep
+        pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep
+        pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep
+        pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep
         speed[A] = 800
         speed[B] = 800
         speed[C] = 800
