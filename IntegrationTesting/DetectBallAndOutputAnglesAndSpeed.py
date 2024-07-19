@@ -1,7 +1,7 @@
 import math
 import serial
 from cvzone.SerialModule import SerialObject
-from smbus2 import SMBus
+# from smbus2 import SMBus
 import time
 from time import sleep
 import cv2
@@ -23,7 +23,7 @@ pos = [0, 0, 0]
 
 # Constants
 angToStep = 3200 / 360
-angOrig = 204
+angOrig = 204.0
 Xoffset = 240  # Replace with actual X offset value
 Yoffset = 240  # Replace with actual Y offset value
 kp = 4E-4  # Replace with actual proportional gain
@@ -36,8 +36,8 @@ B = 1  # Index for stepper B
 C = 2  # Index for stepper C
 
 #real-time coordinates
-x = 0
-y = 0
+x = 120
+y = 298
 
 # What point on the platform do we want the ball to remain at?
 setpointX = 0
@@ -98,29 +98,31 @@ def detect_yellow_ball():
     cv2.destroyAllWindows()
 
 def SendData1():
-    bus.write_byte(addr, 1)
-    sleep(0.001)
-    bus.write_byte(addr, pos[0])
-    sleep(0.001)
-    bus.write_byte(addr, pos[1])
-    sleep(0.001)
-    bus.write_byte(addr, pos[2])
-    sleep(0.001)
-    bus.write_byte(addr, speed[A])
-    sleep(0.001)
-    bus.write_byte(addr, speed[B])
-    sleep(0.001)
-    bus.write_byte(addr, speed[C])
-    sleep(0.001)
+    # bus.write_byte(addr, 1)
+    # sleep(0.001)
+    # bus.write_byte(addr, pos[0])
+    # sleep(0.001)
+    # bus.write_byte(addr, pos[1])
+    # sleep(0.001)
+    # bus.write_byte(addr, pos[2])
+    # sleep(0.001)
+    # bus.write_byte(addr, speed[A])
+    # sleep(0.001)
+    # bus.write_byte(addr, speed[B])
+    # sleep(0.001)
+    # bus.write_byte(addr, speed[C])
+    # sleep(0.001)
+    print(f"SendData")
 
 def SendData2():
-    bus.write_byte(addr, 2)
-    sleep(0.001)
-    bus.write_byte(addr, out[0])
-    sleep(0.001)
-    bus.write_byte(addr, out[1])
-    sleep(0.001)
-
+    # bus.write_byte(addr, 2)
+    # sleep(0.001)
+    # bus.write_byte(addr, out[0])
+    # sleep(0.001)
+    # bus.write_byte(addr, out[1])
+    # sleep(0.001)
+    print(f"SendData")
+    
 def PID(setpointX, setpointY):
     global error, errorPrev, integr, deriv, out, speed, speedPrev, pos
     
@@ -167,23 +169,33 @@ def PID(setpointX, setpointY):
     if detected == 1:
         pos[0] = round((angOrig - theta(A,4.5,-out[0],-out[1])) * angToStep)
         pos[1] = round((angOrig - theta(B,4.5,-out[0],-out[1]))* angToStep)
-        pos[2] = round((angOrig - (C,4.5,-out[0],-out[1])) * angToStep)
+        pos[2] = round((angOrig - theta(C,4.5,-out[0],-out[1])) * angToStep)
         
         speed[A] = A_CurrentPosition
         speed[B] = B_CurrentPosition
         speed[C] = C_CurrentPosition
     else:
-        pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep
-        pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep
-        pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep
+        pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
+        pos[1] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
+        pos[2] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
         speed[A] = 800
         speed[B] = 800
         speed[C] = 800
+
+    print(f"pos[0] = {pos[0]}")
+    print(f"pos[1] = {pos[1]}")
+    print(f"pos[2] = {pos[2]}")
+
+    # Print speeds
+    print(f"speed[A] = {speed[0]}")
+    print(f"speed[B] = {speed[1]}")
+    print(f"speed[C] = {speed[2]}")
 
     timeI = time.time()
     while (time.time() - timeI) < 0.02:  # 20 millis = 0.02 seconds
         SendData1()
         sleep(0.001)
+   
 
 def theta(leg, hz, nx, ny):
     PI = math.pi
@@ -196,30 +208,35 @@ def theta(leg, hz, nx, ny):
     
     # variables for calculating angle
     angle = 0.0
-    x, y, z = 0.0, 0.0, 0.0
+    xPOS, yPOS, zPOS = 0.0, 0.0, 0.0
     d = 2.0 # distance from the center of the base to any of its corners
     e = 3.125 # distance from the center of the platform to any of its corners
     f = 1.75 # length of link #1
     g = 4.0 #length of link #2
     
     # calculates angle A, B, or C
-    if leg == 'A':  # Leg A
-        y = d + (e / 2) * (1 - (nx**2 + 3 * nz**2 + 3 * nz) / (nz + 1 - nx**2 + (nx**4 - 3 * nx**2 * ny**2) / ((nz + 1) * (nz + 1 - nx**2))))
-        z = hz + e * ny
-        mag = math.sqrt(y**2 + z**2)
-        angle = math.acos(y / mag) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
-    elif leg == 'B':  # Leg B
-        x = (math.sqrt(3) / 2) * (e * (1 - (nx**2 + math.sqrt(3) * nx * ny) / (nz + 1)) - d)
-        y = x / math.sqrt(3)
-        z = hz - (e / 2) * (math.sqrt(3) * nx + ny)
-        mag = math.sqrt(x**2 + y**2 + z**2)
-        angle = math.acos((math.sqrt(3) * x + y) / (-2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
-    elif leg == 'C':  # Leg C
-        x = (math.sqrt(3) / 2) * (d - e * (1 - (nx**2 - math.sqrt(3) * nx * ny) / (nz + 1)))
-        y = -x / math.sqrt(3)
-        z = hz + (e / 2) * (math.sqrt(3) * nx - ny)
-        mag = math.sqrt(x**2 + y**2 + z**2)
-        angle = math.acos((math.sqrt(3) * x - y) / (2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
-    
+    if leg == A:  # Leg A
+        yPOS = d + (e / 2) * (1 - (nx**2 + 3 * nz**2 + 3 * nz) / (nz + 1 - nx**2 + (nx**4 - 3 * nx**2 * ny**2) / ((nz + 1) * (nz + 1 - nx**2))))
+        zPOS = hz + e * ny
+        mag = math.sqrt(yPOS**2 + zPOS**2)
+        angle = math.acos(yPOS / mag) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
+    elif leg == B:  # Leg B
+        xPOS = (math.sqrt(3) / 2) * (e * (1 - (nx**2 + math.sqrt(3) * nx * ny) / (nz + 1)) - d)
+        yPOS = xPOS / math.sqrt(3)
+        zPOS = hz - (e / 2) * (math.sqrt(3) * nx + ny)
+        mag = math.sqrt(xPOS**2 + yPOS**2 + zPOS**2)
+        angle = math.acos((math.sqrt(3) * xPOS + yPOS) / (-2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
+    elif leg == C:  # Leg C
+        xPOS = (math.sqrt(3) / 2) * (d - e * (1 - (nx**2 - math.sqrt(3) * nx * ny) / (nz + 1)))
+        yPOS = -xPOS / math.sqrt(3)
+        zPOS = hz + (e / 2) * (math.sqrt(3) * nx - ny)
+        mag = math.sqrt(xPOS**2 + yPOS**2 + zPOS**2)
+        angle = math.acos((math.sqrt(3) * xPOS - yPOS) / (2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
+    print(f"Leg {leg}:")
+    print(f"  x = {xPOS}")
+    print(f"  y = {yPOS}")
+    print(f"  z = {zPOS}")
+    print(f"  angle = {angle}")
     return angle * (180 / PI)  # convert angle to degrees and return
 
+PID(setpointX,setpointY)
