@@ -24,8 +24,8 @@ pos = [0, 0, 0]
 # Constants
 angToStep = 3200 / 360
 angOrig = 204.0
-Xoffset = 240  # Replace with actual X offset value
-Yoffset = 240  # Replace with actual Y offset value
+Xoffset = 100  # Replace with actual X offset value
+Yoffset = 100  # Replace with actual Y offset value
 kp = 4E-4  # Replace with actual proportional gain
 ki = 2E-6  # Replace with actual integral gain
 kd = 7E-3  # Replace with actual derivative gain
@@ -46,7 +46,7 @@ setpointY = 0
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
-    global x, y # Declare x and y as glabal variables
+    global x, y # Declare x and y as global variables
   
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
