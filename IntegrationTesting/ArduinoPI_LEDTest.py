@@ -13,10 +13,10 @@ while number == 1:
     ledstate = input(">>>>>>>     ")
     # Switch on
     if ledstate == "1":
-	  # Sends a byte of data 0x1 to address ‘addr’
-        bus.write_byte(addr, 0x1)
+	  # Sends a byte of integer 1 to address ‘addr’
+        bus.write_byte(addr, 1)
     # Switch off
     elif ledstate == "0":
-        bus.write_byte(addr, 0x0)
+        bus.write_byte(addr, 0)
     else:
         number = 0
