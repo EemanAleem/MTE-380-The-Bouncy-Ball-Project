@@ -17,16 +17,36 @@ for i in range(0,3):
     ByteSpeeds[i] = list(struct.pack('>h', speeds[i]))
     ByteAccels[i] = list(struct.pack('>h', accels[i]))
     
-#     print(f"ByteSteps ", i, " = ", ByteSteps[i])
-#     print(f"ByteSpeeds ", i, " = ",  ByteSpeeds[i])
-#     print(f"ByteAccels ", i, " = ", ByteAccels[i])
+# for i in range (0,3):
+#     for j in range (0,2):
+#         print(f"ByteSteps[",i,"][",j,"] = ", ByteSteps[i][j])
+#         sleep(0.001)
+#     for j in range (0,2):
+#         print(f"ByteSpeeds[",i,"][",j,"] = ", ByteSpeeds[i][j])
+#         sleep(0.001)
+#     for j in range (0,2):
+#         print(f"ByteAccels[",i,"][",j,"] = ", ByteAccels[i][j])
+#         sleep(0.001)
 
 while True:
     for i in range (0,3):
-        bus.write_i2c_block_data(addr, 0, ByteSteps[i])
-        sleep(0.001)
-        bus.write_i2c_block_data(addr, 0, ByteSpeeds[i])
-        sleep(0.001)
-        bus.write_i2c_block_data(addr, 0, ByteAccels[i])
-        sleep(0.001)
-    sleep(2)
+        for j in range (0,2):
+            bus.write_byte(addr, ByteSteps[i][j])
+            sleep(0.001)
+        for j in range (0,2):
+            bus.write_byte(addr, ByteSpeeds[i][j])
+            sleep(0.001)
+        for j in range (0,2):
+            bus.write_byte(addr, ByteAccels[i][j])
+            sleep(0.001)
+    sleep(3)
+
+# while True:
+#     for i in range (0,3):
+#         bus.write_i2c_block_data(addr, 0, ByteSteps[i])
+#         sleep(0.001)
+#         bus.write_i2c_block_data(addr, 0, ByteSpeeds[i])
+#         sleep(0.001)
+#         bus.write_i2c_block_data(addr, 0, ByteAccels[i])
+#         sleep(0.001)
+#     sleep(2)
