@@ -32,21 +32,11 @@ while True:
     for i in range (0,3):
         for j in range (0,2):
             bus.write_byte(addr, ByteSteps[i][j])
-            sleep(0.5)
+            sleep(0.001)
         for j in range (0,2):
             bus.write_byte(addr, ByteSpeeds[i][j])
-            sleep(0.5)
+            sleep(0.001)
         for j in range (0,2):
             bus.write_byte(addr, ByteAccels[i][j])
-            sleep(0.5)
+            sleep(0.001)
     sleep(3)
-
-# while True:
-#     for i in range (0,3):
-#         bus.write_i2c_block_data(addr, 0, ByteSteps[i])
-#         sleep(0.001)
-#         bus.write_i2c_block_data(addr, 0, ByteSpeeds[i])
-#         sleep(0.001)
-#         bus.write_i2c_block_data(addr, 0, ByteAccels[i])
-#         sleep(0.001)
-#     sleep(2)
