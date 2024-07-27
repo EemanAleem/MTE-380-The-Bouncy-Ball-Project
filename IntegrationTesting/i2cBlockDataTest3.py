@@ -32,11 +32,11 @@ while True:
     for i in range (0,3):
         for j in range (0,2):
             bus.write_byte(addr, ByteSteps[i][j])
-            sleep(0.001)
+            sleep(0.1)
         for j in range (0,2):
             bus.write_byte(addr, ByteSpeeds[i][j])
-            sleep(0.001)
+            sleep(0.1)
         for j in range (0,2):
             bus.write_byte(addr, ByteAccels[i][j])
-            sleep(0.001)
+            sleep(0.1)
     sleep(3)
