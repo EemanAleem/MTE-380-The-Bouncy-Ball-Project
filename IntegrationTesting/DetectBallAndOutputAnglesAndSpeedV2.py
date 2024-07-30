@@ -1,15 +1,15 @@
 import math
 import serial
-from cvzone.SerialModule import SerialObject
-# from smbus2 import SMBus
+# from cvzone.SerialModule import SerialObject
+from smbus2 import SMBus
 import time
 from time import sleep
 import cv2
 import numpy as np
 
 #arduino = SerialObject("COM3")
-# addr = 0x8 # bus address
-# bus = SMBus(1) # indicates /dev/i2c-1
+addr = 0x8 # bus address
+bus = SMBus(1) # indicates /dev/i2c-1
 
 # Global variables initialization
 error = [0.0, 0.0]
@@ -50,8 +50,9 @@ def detect_yellow_ball():
   
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
-    cap.set(3,600) #set width to 100
-    cap.set(4,600) #set height to 100
+    cap.set(cv2.CAP_PROP_FPS, 30)
+#     cap.set(3,600) #set width to 100
+#     cap.set(4,600) #set height to 100
 
     while True:
         # Read a frame from the webcam
@@ -60,7 +61,8 @@ def detect_yellow_ball():
             print("Failed to grab frame")
             break
         
-        frame = frame[200:400, 200:400]
+        frame = cv2.resize(frame, (480, 480))
+#         frame = frame[200:400, 200:400]
 
         # Convert the frame to HSV color space
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -99,29 +101,36 @@ def detect_yellow_ball():
     cap.release()
     cv2.destroyAllWindows()
 
-#def SendData1():
-    # bus.write_byte(addr, 1)
-    # sleep(0.001)
-    # bus.write_byte(addr, pos[0])
-    # sleep(0.001)
-    # bus.write_byte(addr, pos[1])
-    # sleep(0.001)
-    # bus.write_byte(addr, pos[2])
-    # sleep(0.001)
-    # bus.write_byte(addr, speed[A])
-    # sleep(0.001)
-    # bus.write_byte(addr, speed[B])
-    # sleep(0.001)
-    # bus.write_byte(addr, speed[C])
-    # sleep(0.001)
-
-#def SendData2():
-    # bus.write_byte(addr, 2)
-    # sleep(0.001)
-    # bus.write_byte(addr, out[0])
-    # sleep(0.001)
-    # bus.write_byte(addr, out[1])
-    # sleep(0.001)
+def SendData():
+    pos[0] = list(struct.pack('>h', pos[0]))
+    for j in range (0,2):
+        bus.write_byte(addr, pos[0][j])
+        sleep(0.01)
+    
+    pos[1] = list(struct.pack('>h', pos[1]))
+    for j in range (0,2):
+        bus.write_byte(addr, pos[1][j])
+        sleep(0.01)
+    
+    pos[2] = list(struct.pack('>h', pos[2]))
+    for j in range (0,2):
+        bus.write_byte(addr, pos[2][j])
+        sleep(0.01)
+    
+    speed[A] = list(struct.pack('>h', speed[A]))
+    for j in range (0,2):
+        bus.write_byte(addr, speed[A][j])
+        sleep(0.01)
+    
+    speed[B] = list(struct.pack('>h', speed[B]))
+    for j in range (0,2):
+        bus.write_byte(addr, speed[B][j])
+        sleep(0.01)
+    
+    speed[C] = list(struct.pack('>h', speed[C]))
+    for j in range (0,2):
+        bus.write_byte(addr, speed[C][j])
+        sleep(0.01)
 
     
 def PID(setpointX, setpointY):
@@ -191,6 +200,8 @@ def PID(setpointX, setpointY):
     print(f"speed[A] = {speed[0]}")
     print(f"speed[B] = {speed[1]}")
     print(f"speed[C] = {speed[2]}")
+    
+    SendData()
 
     timeI = time.time()
     while (time.time() - timeI) < 0.02:  # 20 millis = 0.02 seconds
