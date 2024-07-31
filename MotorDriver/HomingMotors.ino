@@ -55,7 +55,7 @@ void home() {
   for (int i = 0; i < MAX_STEPPERS; i++) {
     steppers[i].setAcceleration(receivedAcceleration[i]);
     steppers[i].setMaxSpeed(receivedSpeed[i]);
-    steppers[i].move(-1 * receivedSteps[i]);
+    steppers[i].moveTo(-1 * receivedSteps[i]);
 
     Serial.print("Motor ");
     Serial.print(i + 1);
@@ -82,11 +82,12 @@ void home() {
 
 void runMotors() {
   if (runAllowed) {
-    while (steppers[0].currentPosition() != -1*receivedSteps[0]) {
-      for (int i = 0; i < MAX_STEPPERS; i++) {
-        steppers[i].enableOutputs(); // Enable outputs for all motors
-        steppers[i].run(); // Step each motor
-      }
+    for (int i = 0; i < MAX_STEPPERS; i++)
+     steppers[i].enableOutputs(); // Enable outputs for all motors
+    while (steppers[0].currentPosition() != -1*receivedSteps[0] || steppers[1].currentPosition() != -1*receivedSteps[1] || steppers[2].currentPosition() != -1*receivedSteps[2]) {
+      for (int i = 0; i < MAX_STEPPERS; i++) 
+        if (steppers[i].currentPosition() != -1*receivedSteps[i])
+          steppers[i].run(); // Step each motor
       if (Serial.available() > 0) return;
     }
     Serial.println("Exited while loop");
@@ -100,7 +101,7 @@ void runMotors() {
 }
 
 void checkSerial() {
-  //recieves char followed by steps,speed,accel for each stepper (ex "p200 200 200 200 200 200 200 200 200)
+  //recieves char followed by steps,speed,accel for each stepper (ex "200 200 200 200 200 200 200 200 200)
   if (Serial.available() > 0) {
     newData = true;
     runAllowed = true;
