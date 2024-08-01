@@ -6,10 +6,12 @@ import time
 from time import sleep
 import cv2
 import numpy as np
+import struct
 
 #arduino = SerialObject("COM3")
 addr = 0x8 # bus address
 bus = SMBus(1) # indicates /dev/i2c-1
+sleep(3)
 
 # Global variables initialization
 error = [0.0, 0.0]
@@ -104,33 +106,36 @@ def detect_yellow_ball():
 def SendData():
     pos[0] = list(struct.pack('>h', pos[0]))
     for j in range (0,2):
+#         print("pos[", 0, "][", j, "]: ", pos[0][j])
         bus.write_byte(addr, pos[0][j])
-        sleep(0.01)
+        sleep(0.05)
     
     pos[1] = list(struct.pack('>h', pos[1]))
     for j in range (0,2):
+#         print("pos[", 1, "][", j, "]: ", pos[1][j])
         bus.write_byte(addr, pos[1][j])
-        sleep(0.01)
+        sleep(0.05)
     
     pos[2] = list(struct.pack('>h', pos[2]))
     for j in range (0,2):
+#         print("pos[", 2, "][", j, "]: ", pos[2][j])
         bus.write_byte(addr, pos[2][j])
-        sleep(0.01)
+        sleep(0.05)
     
-    speed[A] = list(struct.pack('>h', speed[A]))
-    for j in range (0,2):
-        bus.write_byte(addr, speed[A][j])
-        sleep(0.01)
-    
-    speed[B] = list(struct.pack('>h', speed[B]))
-    for j in range (0,2):
-        bus.write_byte(addr, speed[B][j])
-        sleep(0.01)
-    
-    speed[C] = list(struct.pack('>h', speed[C]))
-    for j in range (0,2):
-        bus.write_byte(addr, speed[C][j])
-        sleep(0.01)
+#     speed[A] = list(struct.pack('>h', speed[A]))
+#     for j in range (0,2):
+#         bus.write_byte(addr, speed[A][j])
+#         sleep(0.01)
+#     
+#     speed[B] = list(struct.pack('>h', speed[B]))
+#     for j in range (0,2):
+#         bus.write_byte(addr, speed[B][j])
+#         sleep(0.01)
+#     
+#     speed[C] = list(struct.pack('>h', speed[C]))
+#     for j in range (0,2):
+#         bus.write_byte(addr, speed[C][j])
+#         sleep(0.01)
 
     
 def PID(setpointX, setpointY):
@@ -154,20 +159,20 @@ def PID(setpointX, setpointY):
             out[i] = max(-0.25, min(0.25, out[i]))
         
         # Calculate stepper motor speeds
-        for i in range(3):
-            speedPrev[i] = speed[i]
-            speed[i] = (A_CurrentPosition if i == A else
-                        B_CurrentPosition if i == B else
-                        C_CurrentPosition if i == C else 0)
-            speed[i] = abs(speed[i] - pos[i]) * ks
-            speed[i] = max(speedPrev[i] - 200, min(speedPrev[i] + 200, speed[i]))
-            speed[i] = max(0, min(1000, speed[i]))
-            if i == A: A_CurrentPosition=speed[i]
-            if i == B: B_CurrentPosition=speed[i]
-            if i == C: C_CurrentPosition=speed[i]
+#         for i in range(3):
+#             speedPrev[i] = speed[i]
+#             speed[i] = (A_CurrentPosition if i == A else
+#                         B_CurrentPosition if i == B else
+#                         C_CurrentPosition if i == C else 0)
+#             speed[i] = abs(speed[i] - pos[i]) * ks
+#             speed[i] = max(speedPrev[i] - 200, min(speedPrev[i] + 200, speed[i]))
+#             speed[i] = max(0, min(1000, speed[i]))
+#             if i == A: A_CurrentPosition=speed[i]
+#             if i == B: B_CurrentPosition=speed[i]
+#             if i == C: C_CurrentPosition=speed[i]
         
         # Print outputs
-        print(f"X OUT = {out[0]}   Y OUT = {out[1]}   Speed A: {speed[A]}")
+#         print(f"X OUT = {out[0]}   Y OUT = {out[1]}   Speed A: {speed[A]}")
      
     else:
         # Delay and re-check for ball detection
@@ -197,9 +202,9 @@ def PID(setpointX, setpointY):
     print(f"pos[2] = {pos[2]}")
 
     # Print speeds
-    print(f"speed[A] = {speed[0]}")
-    print(f"speed[B] = {speed[1]}")
-    print(f"speed[C] = {speed[2]}")
+#     print(f"speed[A] = {speed[0]}")
+#     print(f"speed[B] = {speed[1]}")
+#     print(f"speed[C] = {speed[2]}")
     
     SendData()
 
@@ -244,11 +249,11 @@ def theta(leg, hz, nx, ny):
         zPOS = hz + (e / 2) * (math.sqrt(3) * nx - ny)
         mag = math.sqrt(xPOS**2 + yPOS**2 + zPOS**2)
         angle = math.acos((math.sqrt(3) * xPOS - yPOS) / (2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
-    print(f"Leg {leg}:")
-    print(f"  x = {xPOS}")
-    print(f"  y = {yPOS}")
-    print(f"  z = {zPOS}")
-    print(f"  angle = {angle}")
+#     print(f"Leg {leg}:")
+#     print(f"  x = {xPOS}")
+#     print(f"  y = {yPOS}")
+#     print(f"  z = {zPOS}")
+#     print(f"  angle = {angle}")
     return angle * (180 / PI)  # convert angle to degrees and return
 
 detect_yellow_ball()
