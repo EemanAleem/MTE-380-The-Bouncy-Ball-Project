@@ -6,11 +6,12 @@ const int SCL_Pin = 21;
 
 // Data parsing in receiveEvent: ******************************************************************
 // rB is byte received from transmission; int1 and int2 are temporary values for rV;
-// count is used to check whether we have received a first or second byte;
+// countByte is used to check whether we have received a first or second byte;
 // rV is two bytes combined with a bitwise operation to get an integer in the range -32,768 to 32,767
 volatile long int receivedByte, receivedValue;
 volatile long int int1, int2;
-volatile int count = 1;
+volatile long long int countByte = 1, countValue = 1;
+volatile long int pos[3];
  
 void setup() {
   Wire.begin(0x8); // Arduino joins I2C bus as slave with address 8
@@ -30,22 +31,29 @@ void receiveEvent(int howMany) {
   receivedByte = Wire.read();
 
   // If the counter is odd, therefore a first byte.
-  if (count%2 != 0)
+  if (countByte%2 != 0)
     int1 = receivedByte;
   else {
     int2 = receivedByte;
-    // Serial.print("int1: ");
-    // Serial.println(int1);
-    // Serial.print("int2: ");
-    // Serial.println(int2);
-
-    // int1 << 8 shifts the bits of int1 to the left by 8 positions. This effectively multiplies int1 by 256 and places it in the high byte of a 16-bit integer.
-    // The bitwise OR operation combines the shifted int1 with int2 to form the final 16-bit value. int2 is placed in the lower 8 bits of the result.
     receivedValue = (int1 << 8) | int2;
-    // Serial.print("rV: ");
-    Serial.println(receivedValue);
+    if ( (countValue - 1) % 3 == 0 ) {
+      pos[0] = receivedValue;
+      Serial.print("pos[0]: ");
+      Serial.println(pos[0]);
+    }
+    else if ( (countValue - 2) % 3 == 0 ) {
+      pos[1] = receivedValue;
+      Serial.print("pos[1]: ");
+      Serial.println(pos[1]);
+    }
+    else {
+      pos[2] = receivedValue;
+      Serial.print("pos[2]: ");
+      Serial.println(pos[2]);
+    }
+    countValue++;
   }
-  count++;
+  countByte++;
   delay(20);
 }
 
@@ -53,3 +61,9 @@ void loop() {
   delay(100); // Keep waiting for data
 }
 
+// Serial.print("int1: ");
+// Serial.println(int1);
+// Serial.print("int2: ");
+// Serial.println(int2);
+// int1 << 8 shifts the bits of int1 to the left by 8 positions. This effectively multiplies int1 by 256 and places it in the high byte of a 16-bit integer.
+// The bitwise OR operation combines the shifted int1 with int2 to form the final 16-bit value. int2 is placed in the lower 8 bits of the result.
