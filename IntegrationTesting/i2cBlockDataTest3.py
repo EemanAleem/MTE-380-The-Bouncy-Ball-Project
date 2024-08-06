@@ -12,11 +12,13 @@ ByteSteps = [0,0,0]
 ByteSpeeds = [0,0,0]
 ByteAccels = [0,0,0]
 
+# Converts the integers into a 2-byte representation
 for i in range(0,3):
     ByteSteps[i] = list(struct.pack('>h', steps[i]))
     ByteSpeeds[i] = list(struct.pack('>h', speeds[i]))
     ByteAccels[i] = list(struct.pack('>h', accels[i]))
-    
+
+# Prints out the byte arrays for each integer
 for i in range (0,3):
     for j in range (0,2):
         print(f"ByteSteps[",i,"][",j,"] = ", ByteSteps[i][j])
@@ -27,7 +29,7 @@ for i in range (0,3):
     for j in range (0,2):
         print(f"ByteAccels[",i,"][",j,"] = ", ByteAccels[i][j])
         sleep(0.001)
-
+# Sends the bytes to the I2C device
 while True:
     for i in range (0,3):
         for j in range (0,2):
