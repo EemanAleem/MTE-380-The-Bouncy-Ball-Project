@@ -17,6 +17,7 @@ void setup() {
   Wire.begin(0x8); // Arduino joins I2C bus as slave with address 8
   Wire.setClock(400000);  // Set clock speed to 400 kHz
   Serial.begin(9600);
+  delay(3000);
   
   // Call receiveEvent function when data received                
   Wire.onReceive(receiveEvent);
@@ -29,6 +30,11 @@ void setup() {
 // Function that executes whenever data is received from master device, the Pi 5
 void receiveEvent(int howMany) {
   receivedByte = Wire.read();
+  // delay(3);
+  // if (receivedByte < 0 || receivedByte > 255) {
+  //   Serial.println(receivedByte);
+  //   return;
+  // } 
 
   // If the counter is odd, therefore a first byte.
   if (countByte%2 != 0)
@@ -54,11 +60,11 @@ void receiveEvent(int howMany) {
     countValue++;
   }
   countByte++;
-  delay(20);
+  // delay(20);
 }
 
 void loop() {
-  delay(100); // Keep waiting for data
+  delay(1); // Keep waiting for data
 }
 
 // Serial.print("int1: ");
