@@ -20,6 +20,7 @@ const int MAX_STEPPERS = 3;
 const int STEP_PINS[MAX_STEPPERS] = {3, 6, 9};   // Step pins for motors 1, 2, 3
 const int DIR_PINS[MAX_STEPPERS] = {4, 7, 10};    // Direction pins for motors 1, 2, 3
 const int ks = 20; //speed amplifying constant
+bool allAtPosition = false;
 
 // Create instances of AccelStepper for each motor
 AccelStepper steppers[MAX_STEPPERS] = {
@@ -30,7 +31,7 @@ AccelStepper steppers[MAX_STEPPERS] = {
 
 // Array to store received parameters for each motor
 // -373, -373, -373
-volatile long int pos[MAX_STEPPERS] = {200, 200, 200}; // Initialize with 0 steps
+volatile long int pos[MAX_STEPPERS] = {200, 200, 200}; // Initialize with 200 steps
 volatile long int speed[MAX_STEPPERS] = {0, 0, 0}; // Initialize with 0 speed
 volatile long int speedPrev[MAX_STEPPERS] = {0,0,0};
 
@@ -46,10 +47,6 @@ void setup() {
   Serial.begin(9600);
   delay(3000);
 
-  // Turn off 20k-50k ohm built-in pull up resistors at pins specified
-  digitalWrite(SDA_Pin, LOW);
-  digitalWrite(SCL_Pin, LOW);
-
   // Set maximum speed and acceleration for each stepper motor
   for (int i = 0; i < MAX_STEPPERS; i++) {
     steppers[i].setMaxSpeed(100000); // Speed = Steps / second
@@ -59,23 +56,29 @@ void setup() {
     Serial.print(i + 1);
     Serial.print(" current position: ");
     Serial.println(steppers[i].currentPosition());
+    Serial.print(pos[i]);
   }
   
   home();
   Serial.println("Out of home"); 
   
   Wire.onReceive(receiveEvent);
+
+  // Turn off 20k-50k ohm built-in pull up resistors at pins specified
+  digitalWrite(SDA_Pin, LOW);
+  digitalWrite(SCL_Pin, LOW);
 }
 
 void loop() {
   // if (Wire.available())
   //   receiveEvent();
-  setSpeed();
-  moveMotors();
+  // moveMotors();
+  Serial.println("In void loop"); 
   delay(1);
 }
 
 void receiveEvent() {
+  Serial.println("In receive event"); 
   receivedByte = Wire.read();
 
   // If the counter is odd, therefore a first byte.
@@ -106,6 +109,9 @@ void receiveEvent() {
     countValue++;
   }
   countByte++;
+
+  setSpeed();
+  moveMotors();
 }
 
 void home() {
@@ -116,20 +122,51 @@ void home() {
     steppers[i].moveTo(-1*pos[i]);
   }
 
-  bool allAtPosition = false;
+  allAtPosition = false;
+  while (!allAtPosition) {
+    allAtPosition = true;
+    
+    for (int i = 0; i < MAX_STEPPERS; i++) {
+      if (steppers[i].currentPosition() != -1*pos[i]) {
+        Serial.println(steppers[i].currentPosition());
+        steppers[i].run(); // Step each motor
+        allAtPosition = false;
+      }
+    }
+  }
+
+  for (int i = 0; i < MAX_STEPPERS; i++)
+    steppers[i].setCurrentPosition(0);
+}
+
+void moveMotors()
+{
+  for (int i = 0; i < MAX_STEPPERS; i++) {
+    steppers[i].enableOutputs();
+    steppers[i].setMaxSpeed(speed[i]);
+    steppers[i].setAcceleration(speed[i] * 30);
+    steppers[i].moveTo(-1*pos[i]);
+  }
+
+  // int timePrev = millis();
+  // while(millis() - timePrev < 20) {
+  //   steppers[0].run();
+  //   steppers[1].run();
+  //   steppers[2].run();
+  // }
+
+  allAtPosition = false;
   while (!allAtPosition) {
     allAtPosition = true;
     
     for (int i = 0; i < MAX_STEPPERS; i++)
-      if (steppers[i].currentPosition() != pos[i]) {
+      if (steppers[i].currentPosition() != -1*pos[i]) {
         steppers[i].run(); // Step each motor
         allAtPosition = false;
       }
 
   }
 
-  for (int i = 0; i < MAX_STEPPERS; i++)
-    steppers[i].setCurrentPosition(0);
 }
 
 void setSpeed() {
@@ -139,22 +176,4 @@ void setSpeed() {
     speed[i] = constrain(speed[i], speedPrev[i] - 200, speedPrev[i] + 200); // Filters speed by preventing it from being over 200 away from last speed
     speed[i] = constrain(speed[i], 0, 1000);     
   } 
-}
-
-void moveMotors()
-{
-  for (int i = 0; i < MAX_STEPPERS; i++) {
-    //sets calculated speed
-    steppers[i].setMaxSpeed(speed[i]);
-    //sets acceleration to be proportional to speed
-    steppers[i].setAcceleration(speed[i] * 30);
-    //sets target positions
-    steppers[i].moveTo(pos[i]);
-  }
-    int timePrev = millis();
-    while(millis() - timePrev < 20) {
-      steppers[0].run();
-      steppers[1].run();
-      steppers[2].run();
-    }
 }
