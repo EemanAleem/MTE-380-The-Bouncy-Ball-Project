@@ -13,6 +13,7 @@ const int ledPin = 47;
 volatile long int receivedByte, receivedValue;
 volatile long int int1, int2;
 volatile long long int countByte = 1, countValue = 1;
+unsigned long st1, end1, dur1;
 // volatile long int pos[3];
 
 // MOTORS CONFIGURATION *****************************************************************
@@ -73,12 +74,12 @@ void loop() {
   // if (Wire.available())
   //   receiveEvent();
   // moveMotors();
-  Serial.println("In void loop"); 
-  delay(1);
+  // Serial.println("In void loop"); 
+  delay(10);
 }
 
 void receiveEvent() {
-  Serial.println("In receive event"); 
+  // Serial.println("In receive event"); 
   receivedByte = Wire.read();
 
   // If the counter is odd, therefore a first byte.
@@ -105,13 +106,13 @@ void receiveEvent() {
       pos[2] = receivedValue;
       Serial.print("pos[2]: ");
       Serial.println(pos[2]);
+      setSpeed();
     }
     countValue++;
   }
   countByte++;
 
-  setSpeed();
-  moveMotors();
+  // delay(20);
 }
 
 void home() {
@@ -128,7 +129,7 @@ void home() {
     
     for (int i = 0; i < MAX_STEPPERS; i++) {
       if (steppers[i].currentPosition() != -1*pos[i]) {
-        Serial.println(steppers[i].currentPosition());
+        // Serial.println(steppers[i].currentPosition());
         steppers[i].run(); // Step each motor
         allAtPosition = false;
       }
@@ -170,10 +171,15 @@ void moveMotors()
 }
 
 void setSpeed() {
- for (int i = 0; i < MAX_STEPPERS; i++) {
+  st1 = micros();
+  for (int i = 0; i < MAX_STEPPERS; i++) {
     speedPrev[i] = speed[i]; // Sets previous speed
     speed[i] = abs(steppers[i].currentPosition() - pos[i]) * ks; // Calculates the error in the current position and target position
     speed[i] = constrain(speed[i], speedPrev[i] - 200, speedPrev[i] + 200); // Filters speed by preventing it from being over 200 away from last speed
     speed[i] = constrain(speed[i], 0, 1000);     
-  } 
+  }
+  end1 = micros();
+  dur1 = end1-st1;
+  Serial.println(dur1);
+  Serial.println("Done setSpeed");
 }
