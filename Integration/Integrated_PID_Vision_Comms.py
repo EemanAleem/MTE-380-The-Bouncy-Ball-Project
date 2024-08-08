@@ -11,7 +11,7 @@ import struct
 #arduino = SerialObject("COM3")
 addr = 0x8 # bus address
 bus = SMBus(1) # indicates /dev/i2c-1
-sleep(3)
+
 
 # Global variables initialization
 error = [0.0, 0.0]
@@ -45,7 +45,7 @@ y = 0
 setpointX = 0
 setpointY = 0
 
-sleep(3)
+sleep(5)
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
@@ -93,7 +93,8 @@ def detect_yellow_ball():
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
-        sleep(0.03)
+#         0.03
+        sleep(0.03) 
 #         cProfile.run('PID(setpointX, setpointY)')
         PID(setpointX, setpointY)
 
@@ -110,19 +111,19 @@ def SendData():
     for j in range (0,2):
 #         print("pos[", 0, "][", j, "]: ", pos[0][j])
         bus.write_byte(addr, pos[0][j])
-        sleep(0.0001)
+        sleep(0.002)
     
     pos[1] = list(struct.pack('>h', pos[1]))
     for j in range (0,2):
 #         print("pos[", 1, "][", j, "]: ", pos[1][j])
         bus.write_byte(addr, pos[1][j])
-        sleep(0.0001)
+        sleep(0.002)
     
     pos[2] = list(struct.pack('>h', pos[2]))
     for j in range (0,2):
 #         print("pos[", 2, "][", j, "]: ", pos[2][j])
         bus.write_byte(addr, pos[2][j])
-        sleep(0.0001)
+        sleep(0.002)
 
     
 def PID(setpointX, setpointY):
