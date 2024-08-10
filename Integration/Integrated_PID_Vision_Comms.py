@@ -125,6 +125,9 @@ def SendData():
         bus.write_byte(addr, pos[2][j])
         sleep(0.002)
 
+    # Delay 20ms between a full set transmissions
+    sleep(0.02)
+
     
 def PID(setpointX, setpointY):
     global error, errorPrev, integr, deriv, out, speed, speedPrev, pos
@@ -174,7 +177,6 @@ def PID(setpointX, setpointY):
     print(f"pos[2] = {pos[2]}")
     
     SendData()
-    sleep(0.005)
    
 
 def theta(leg, hz, nx, ny):
