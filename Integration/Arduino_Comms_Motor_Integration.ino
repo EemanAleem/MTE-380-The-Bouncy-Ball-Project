@@ -13,6 +13,7 @@ const int ledPin = 47;
 volatile long int receivedByte, receivedValue;
 volatile long int int1, int2;
 volatile long long int countByte = 1, countValue = 1;
+volatile bool fullSet = false;
 unsigned long st1, end1, dur1;
 // volatile long int pos[3];
 
@@ -71,7 +72,8 @@ void setup() {
 }
 
 void loop() {
-  moveMotors();
+  if (fullSet)
+    moveMotors();
   delay(5);
 }
 
@@ -91,6 +93,7 @@ void receiveEvent() {
     // Sort value received into the pos[3] array
     if ( (countValue - 1) % 3 == 0 ) {
       pos[0] = receivedValue;
+      fullSet = false;
       Serial.print("pos[0]: ");
       Serial.println(pos[0]);
     }
@@ -104,6 +107,7 @@ void receiveEvent() {
       Serial.print("pos[2]: ");
       Serial.println(pos[2]);
       setSpeed();
+      fullSet = true;
     }
     countValue++;
   }
