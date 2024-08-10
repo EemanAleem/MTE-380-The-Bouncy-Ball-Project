@@ -71,11 +71,8 @@ void setup() {
 }
 
 void loop() {
-  // if (Wire.available())
-  //   receiveEvent();
-  // moveMotors();
-  // Serial.println("In void loop"); 
-  delay(10);
+  moveMotors();
+  delay(5);
 }
 
 void receiveEvent() {
