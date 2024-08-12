@@ -11,7 +11,7 @@ import struct
 #arduino = SerialObject("COM3")
 addr = 0x8 # bus address
 bus = SMBus(1) # indicates /dev/i2c-1
-sleep(3)
+
 
 # Global variables initialization
 error = [0.0, 0.0]
@@ -22,16 +22,15 @@ out = [0.0, 0.0]
 speed = [0, 0, 0]
 speedPrev = [0, 0, 0]
 pos = [0, 0, 0]
-
+prevT = 0
 # Constants
-angToStep = 3200 / 360
+angToStep = 6400 / 360
 angOrig = 204.0
-Xoffset = 100  # Replace with actual X offset value
-Yoffset = 100  # Replace with actual Y offset value
-kp = 4E-4  # Replace with actual proportional gain
-ki = 2E-6  # Replace with actual integral gain
-kd = 7E-3  # Replace with actual derivative gain
-ks = 20  # Replace with actual speed gain
+Xoffset = 240  # Replace with actual X offset value
+Yoffset = 240  # Replace with actual Y offset value
+kp = 0.00015 #4E-4   Replace with actual proportional gain
+ki = 0.0001 #2E-6  # Replace with actual integral gain
+kd = 0.000001 #7E-3  # Replace with actual derivative gain
 
 A = 0  # Index for stepper A
 B = 1  # Index for stepper B
@@ -45,7 +44,7 @@ y = 0
 setpointX = 0
 setpointY = 0
 
-sleep(3)
+sleep(5)
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
@@ -89,11 +88,12 @@ def detect_yellow_ball():
                 # cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
                 cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)
-                print(f"Yellow ball detected at position: ({int(x)}, {int(y)})")
+                print(f"({int(x)}, {int(y)})")
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
-        sleep(0.1)
+#         0.03
+        sleep(0.03) 
 #         cProfile.run('PID(setpointX, setpointY)')
         PID(setpointX, setpointY)
 
@@ -110,38 +110,41 @@ def SendData():
     for j in range (0,2):
 #         print("pos[", 0, "][", j, "]: ", pos[0][j])
         bus.write_byte(addr, pos[0][j])
-        sleep(0.05)
+        sleep(0.002)
     
     pos[1] = list(struct.pack('>h', pos[1]))
     for j in range (0,2):
 #         print("pos[", 1, "][", j, "]: ", pos[1][j])
         bus.write_byte(addr, pos[1][j])
-        sleep(0.05)
+        sleep(0.002)
     
     pos[2] = list(struct.pack('>h', pos[2]))
     for j in range (0,2):
 #         print("pos[", 2, "][", j, "]: ", pos[2][j])
         bus.write_byte(addr, pos[2][j])
-        sleep(0.05)
+        sleep(0.002)
+
+    # Delay 20ms between a full set transmissions
+    sleep(0.045)
 
     
 def PID(setpointX, setpointY):
-    global error, errorPrev, integr, deriv, out, speed, speedPrev, pos
+    global error, errorPrev, integr, deriv, out, speed, speedPrev, pos, prevT
     
-    A_CurrentPosition = 0
-    B_CurrentPosition = 0
-    C_CurrentPosition = 0
     
     if x != 0:
         detected = 1
         
         # Calculate PID values for X and Y
         for i in range(2):
+            currT = time.time()
+            deltaT = currT - prevT
+            prevT = currT
             errorPrev[i] = error[i]
-            error[i] = (Xoffset - x - setpointX) if i == 0 else (Yoffset - y - setpointY)
-            integr[i] += error[i] + errorPrev[i]
-            deriv[i] = error[i] - errorPrev[i]
-            deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
+            error[i] = (x - Xoffset - setpointX) if i == 0 else (Yoffset - y - setpointY)
+            integr[i] += error[i] + errorPrev[i] * deltaT
+            deriv[i] = (error[i] - errorPrev[i]) / deltaT
+            #deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
             out[i] = kp * error[i] + ki * integr[i] + kd * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
      
@@ -156,27 +159,17 @@ def PID(setpointX, setpointY):
         pos[0] = round((angOrig - theta(A,4.5,-out[0],-out[1])) * angToStep)
         pos[1] = round((angOrig - theta(B,4.5,-out[0],-out[1]))* angToStep)
         pos[2] = round((angOrig - theta(C,4.5,-out[0],-out[1])) * angToStep)
-        
-        speed[A] = A_CurrentPosition
-        speed[B] = B_CurrentPosition
-        speed[C] = C_CurrentPosition
     else:
+        print(f"detected=0 | ({int(x)}, {int(y)})")
         pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        pos[1] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        pos[2] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        speed[A] = 800
-        speed[B] = 800
-        speed[C] = 800
+        pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep)
+        pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep)
 
-    print(f"pos[0] = {pos[0]}")
-    print(f"pos[1] = {pos[1]}")
-    print(f"pos[2] = {pos[2]}")
+#     print(f"pos[0] = {pos[0]}")
+#     print(f"pos[1] = {pos[1]}")
+#     print(f"pos[2] = {pos[2]}")
     
     SendData()
-    sleep(0.005)
-#     timeI = time.time()
-#     while (time.time() - timeI) < 0.02:  # 20 millis = 0.02 seconds
-#         sleep(0.001)
    
 
 def theta(leg, hz, nx, ny):
@@ -222,10 +215,5 @@ def theta(leg, hz, nx, ny):
     return angle * (180 / PI)  # convert angle to degrees and return
 
 if __name__ == '__main__':
-#     profiler = cProfile.Profile()
-#     profiler.enable()
-    
     detect_yellow_ball()
-    
-#     profiler.disable()
-#     profiler.dump_stats('profile_data.prof')
+
