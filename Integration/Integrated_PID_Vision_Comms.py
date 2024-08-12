@@ -126,7 +126,7 @@ def SendData():
         sleep(0.002)
 
     # Delay 20ms between a full set transmissions
-    sleep(0.02)
+    sleep(0.045)
 
     
 def PID(setpointX, setpointY):
