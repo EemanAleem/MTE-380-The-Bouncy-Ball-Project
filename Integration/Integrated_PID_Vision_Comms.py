@@ -26,11 +26,11 @@ pos = [0, 0, 0]
 # Constants
 angToStep = 3200 / 360
 angOrig = 204.0
-Xoffset = 100  # Replace with actual X offset value
-Yoffset = 100  # Replace with actual Y offset value
-kp = 4E-4  # Replace with actual proportional gain
-ki = 2E-6  # Replace with actual integral gain
-kd = 7E-3  # Replace with actual derivative gain
+Xoffset = 240  # Replace with actual X offset value
+Yoffset = 240  # Replace with actual Y offset value
+kp = 0.005 #4E-4   Replace with actual proportional gain
+ki = 0#2E-6  # Replace with actual integral gain
+kd = 0#7E-3  # Replace with actual derivative gain
 ks = 20  # Replace with actual speed gain
 
 A = 0  # Index for stepper A
@@ -89,7 +89,7 @@ def detect_yellow_ball():
                 # cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
                 cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)
-#                 print(f"Yellow ball detected at position: ({int(x)}, {int(y)})")
+                print(f"({int(x)}, {int(y)})")
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
@@ -166,15 +166,15 @@ def PID(setpointX, setpointY):
         speed[C] = C_CurrentPosition
     else:
         pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        pos[1] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        pos[2] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
+        pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep)
+        pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep)
         speed[A] = 800
         speed[B] = 800
         speed[C] = 800
 
-    print(f"pos[0] = {pos[0]}")
-    print(f"pos[1] = {pos[1]}")
-    print(f"pos[2] = {pos[2]}")
+#     print(f"pos[0] = {pos[0]}")
+#     print(f"pos[1] = {pos[1]}")
+#     print(f"pos[2] = {pos[2]}")
     
     SendData()
    
@@ -223,5 +223,4 @@ def theta(leg, hz, nx, ny):
 
 if __name__ == '__main__':
     detect_yellow_ball()
-
 
