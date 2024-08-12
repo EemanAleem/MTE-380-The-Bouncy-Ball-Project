@@ -54,11 +54,11 @@ void setup() {
     steppers[i].setMaxSpeed(100000); // Speed = Steps / second
     steppers[i].disableOutputs(); // Disable outputs initially
     steppers[i].setCurrentPosition(0); // Reset current position to 0
-    Serial.print("Motor ");
-    Serial.print(i + 1);
-    Serial.print(" current position: ");
-    Serial.println(steppers[i].currentPosition());
-    Serial.print(pos[i]);
+    // Serial.print("Motor ");
+    // Serial.print(i + 1);
+    // Serial.print(" current position: ");
+    // Serial.println(steppers[i].currentPosition());
+    // Serial.print(pos[i]);
   }
   
   home();
@@ -69,51 +69,6 @@ void setup() {
   // Turn off 20k-50k ohm built-in pull up resistors at pins specified
   digitalWrite(SDA_Pin, LOW);
   digitalWrite(SCL_Pin, LOW);
-}
-
-void loop() {
-  if (fullSet)
-    moveMotors();
-  delay(5);
-}
-
-void receiveEvent() {
-  // Serial.println("In receive event"); 
-  receivedByte = Wire.read();
-
-  // If the counter is odd, therefore a first byte.
-  if (countByte%2 != 0)
-    int1 = receivedByte;
-  else {
-    int2 = receivedByte;
-
-    // Combine bytes to get a long int
-    receivedValue = (int1 << 8) | int2;
-
-    // Sort value received into the pos[3] array
-    if ( (countValue - 1) % 3 == 0 ) {
-      pos[0] = receivedValue;
-      fullSet = false;
-      Serial.print("pos[0]: ");
-      Serial.println(pos[0]);
-    }
-    else if ( (countValue - 2) % 3 == 0 ) {
-      pos[1] = receivedValue;
-      Serial.print("pos[1]: ");
-      Serial.println(pos[1]);
-    }
-    else {
-      pos[2] = receivedValue;
-      Serial.print("pos[2]: ");
-      Serial.println(pos[2]);
-      setSpeed();
-      fullSet = true;
-    }
-    countValue++;
-  }
-  countByte++;
-
-  // delay(20);
 }
 
 void home() {
@@ -137,14 +92,62 @@ void home() {
     }
   }
 
-  for (int i = 0; i < MAX_STEPPERS; i++)
-    steppers[i].setCurrentPosition(0);
+  // for (int i = 0; i < MAX_STEPPERS; i++)
+  //   steppers[i].setCurrentPosition(0);
+}
+
+void loop() {
+  if (fullSet) {
+    moveMotors();
+    fullSet = false;
+  }
+  delay(5);
+}
+
+void receiveEvent() {
+  // Serial.println("In receive event"); 
+  receivedByte = Wire.read();
+
+  // If the counter is odd, therefore a first byte.
+  if (countByte%2 != 0)
+    int1 = receivedByte;
+  else {
+    int2 = receivedByte;
+
+    // Combine bytes to get a long int
+    receivedValue = (int1 << 8) | int2;
+
+    // Sort value received into the pos[3] array
+    if ( (countValue - 1) % 3 == 0 ) {
+      pos[0] = receivedValue;
+      // Serial.print("pos[0]: ");
+      Serial.println(pos[0]);
+    }
+    else if ( (countValue - 2) % 3 == 0 ) {
+      pos[1] = receivedValue;
+      // Serial.print("pos[1]: ");
+      Serial.println(pos[1]);
+    }
+    else {
+      pos[2] = receivedValue;
+      // Serial.print("pos[2]: ");
+      Serial.println(pos[2]);
+      setSpeed();
+      fullSet = true;
+      Serial.println("fs");
+    }
+    countValue++;
+  }
+  countByte++;
+
+  // delay(20);
 }
 
 void moveMotors()
 {
+  Serial.println("In movemotors");
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    steppers[i].enableOutputs();
+    // steppers[i].enableOutputs();
     steppers[i].setMaxSpeed(speed[i]);
     steppers[i].setAcceleration(speed[i] * 30);
     steppers[i].moveTo(-1*pos[i]);
@@ -160,27 +163,26 @@ void moveMotors()
   allAtPosition = false;
   while (!allAtPosition) {
     allAtPosition = true;
-    
     for (int i = 0; i < MAX_STEPPERS; i++)
       if (steppers[i].currentPosition() != -1*pos[i]) {
         steppers[i].run(); // Step each motor
         allAtPosition = false;
       }
-
   }
-
 }
 
 void setSpeed() {
-  st1 = micros();
+  // st1 = micros();
   for (int i = 0; i < MAX_STEPPERS; i++) {
     speedPrev[i] = speed[i]; // Sets previous speed
     speed[i] = abs(steppers[i].currentPosition() - pos[i]) * ks; // Calculates the error in the current position and target position
     speed[i] = constrain(speed[i], speedPrev[i] - 200, speedPrev[i] + 200); // Filters speed by preventing it from being over 200 away from last speed
-    speed[i] = constrain(speed[i], 0, 1000);     
+    speed[i] = constrain(speed[i], 0, 1000);
+    // Serial.print("Sp: ");
+    // Serial.println(speed[i]);
   }
-  end1 = micros();
-  dur1 = end1-st1;
-  Serial.println(dur1);
+  // end1 = micros();
+  // dur1 = end1-st1;
+  // Serial.println(dur1);
   Serial.println("Done setSpeed");
 }
