@@ -63,15 +63,15 @@ void PID() {
   Serial.print(",");
 
   //stepper.setSpeed(output);
-  long currT2 = millis();
   int stepperTarget = output * 270 / 1023 * 3200 / 360;
   Serial.print(stepperTarget);
   stepper.move(stepperTarget);
+ long currT2 = millis();
  while (analogRead(A0) < 1023 && analogRead(A0) >0 && (millis() - currT2) < 1000) {
-      Serial.print((millis() - currT2));
-      Serial.print(","); 
-      Serial.print(stepper.currentPosition());
-      Serial.println();
+    //  Serial.print((millis() - currT2));
+    //  Serial.print(","); 
+    // Serial.print(stepper.currentPosition());
+    //  Serial.println();
       stepper.setSpeed(stepperTarget);
       stepper.runSpeed();
  }
