@@ -24,14 +24,13 @@ speedPrev = [0, 0, 0]
 pos = [0, 0, 0]
 
 # Constants
-angToStep = 3200 / 360
+angToStep = 6400 / 360
 angOrig = 204.0
 Xoffset = 240  # Replace with actual X offset value
 Yoffset = 240  # Replace with actual Y offset value
-kp = 0.005 #4E-4   Replace with actual proportional gain
-ki = 0#2E-6  # Replace with actual integral gain
-kd = 0#7E-3  # Replace with actual derivative gain
-ks = 20  # Replace with actual speed gain
+kp = 2E-4 #4E-4   Replace with actual proportional gain
+ki = 5E-6 #2E-6  # Replace with actual integral gain
+kd = 2E-3 #7E-3  # Replace with actual derivative gain
 
 A = 0  # Index for stepper A
 B = 1  # Index for stepper B
@@ -142,7 +141,7 @@ def PID(setpointX, setpointY):
         # Calculate PID values for X and Y
         for i in range(2):
             errorPrev[i] = error[i]
-            error[i] = (Xoffset - x - setpointX) if i == 0 else (Yoffset - y - setpointY)
+            error[i] = (x - Xoffset - setpointX) if i == 0 else (Yoffset - y - setpointY)
             integr[i] += error[i] + errorPrev[i]
             deriv[i] = error[i] - errorPrev[i]
             deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
@@ -165,6 +164,7 @@ def PID(setpointX, setpointY):
         speed[B] = B_CurrentPosition
         speed[C] = C_CurrentPosition
     else:
+        print(f"detected=0 | ({int(x)}, {int(y)})")
         pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
         pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep)
         pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep)
@@ -223,4 +223,5 @@ def theta(leg, hz, nx, ny):
 
 if __name__ == '__main__':
     detect_yellow_ball()
+
 
