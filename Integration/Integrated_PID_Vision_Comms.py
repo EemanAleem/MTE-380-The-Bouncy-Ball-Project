@@ -14,46 +14,46 @@ bus = SMBus(1) # indicates /dev/i2c-1
 
 # GLOBAL ************************************************************
 # PID:
-global error = [0.0, 0.0]
-global errorPrev = [0.0, 0.0]
-global integr = [0.0, 0.0]
-global deriv = [0.0, 0.0]
-global out = [0.0, 0.0]
-global speed = [0, 0, 0]
-global speedPrev = [0, 0, 0]
-global pos = [0, 0, 0]
-global prevT = 0
+error = [0.0, 0.0]
+errorPrev = [0.0, 0.0]
+integr = [0.0, 0.0]
+deriv = [0.0, 0.0]
+out = [0.0, 0.0]
+speed = [0, 0, 0]
+speedPrev = [0, 0, 0]
+pos = [0, 0, 0]
+prevT = 0
 
 #real-time coordinates
-global x = 0
-global y = 0
+x = 0
+y = 0
 
 # Checks whether the ball is present on the platform or not
-global detected = 0
+detected = 0
 
 # What point on the platform do we want the ball to remain at?
-global setpointX = 0
-global setpointY = 0
+setpointX = 0
+setpointY = 0
 
 # CONSTANTS ***********************************************************
-global PI = math.pi
-global ANG_TO_STEP = 6400 / 360
-global ANG_ORIG = 204.0
-global X_OFFSET = 240  # Replace with actual X offset value
-global Y_OFFSET = 240  # Replace with actual Y offset value
-global KP = 0.00015 #4E-4   Replace with actual proportional gain
-global KI = 0.0001 #2E-6  # Replace with actual integral gain
-global KD = 0.000001 #7E-3  # Replace with actual derivative gain
+PI = math.pi
+ANG_TO_STEP = 6400 / 360
+ANG_ORIG = 204.0
+X_OFFSET = 240  # Replace with actual X offset value
+Y_OFFSET = 240  # Replace with actual Y offset value
+KP = 0.00015 #4E-4   Replace with actual proportional gain
+KI = 0.0001 #2E-6  # Replace with actual integral gain
+KD = 0.000001 #7E-3  # Replace with actual derivative gain
 
-global A = 0  # Index for stepper A
-global B = 1  # Index for stepper B
-global C = 2  # Index for stepper C
+A = 0  # Index for stepper A
+B = 1  # Index for stepper B
+C = 2  # Index for stepper C
 
 sleep(5)
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
-#     global x, y, detected # Declare said variables as global variables
+    global x, y, detected # Declare said variables as global variables
   
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
@@ -138,20 +138,17 @@ def SendData():
 
     
 def PID(setpointX, setpointY):
-#     global error, errorPrev, integr, deriv, out, speed, speedPrev, pos
+    global error, errorPrev, integr, deriv, out, speed, speedPrev, pos, prevT
 
     if detected == 1:
         
         # Calculate PID values for X and Y
         for i in range(2):
-            currT = time.time()
-            deltaT = currT - prevT
-            prevT = currT
             errorPrev[i] = error[i]
             error[i] = (x - X_OFFSET - setpointX) if i == 0 else (Y_OFFSET - y - setpointY)
-            integr[i] += error[i] + errorPrev[i] * deltaT
-            deriv[i] = (error[i] - errorPrev[i]) / deltaT
-            #deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
+            integr[i] += error[i] + errorPrev[i]
+            deriv[i] = error[i] - errorPrev[i]
+            deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
             out[i] = KP * error[i] + KI * integr[i] + KD * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
             
