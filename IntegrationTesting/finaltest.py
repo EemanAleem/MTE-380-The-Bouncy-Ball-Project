@@ -40,6 +40,9 @@ C = 2  # Index for stepper C
 x = 0
 y = 0
 
+# Checks whether the ball is present on the platform or not
+detected = 0
+
 # What point on the platform do we want the ball to remain at?
 setpointX = 0
 setpointY = 0
@@ -48,7 +51,7 @@ sleep(5)
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
-    global x, y # Declare x and y as global variables
+    global x, y, detected # Declare said variables as global variables
   
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
@@ -81,14 +84,18 @@ def detect_yellow_ball():
 
         # Find the index of the largest contour
         if contours:
+            detected = 1
             largest_contour = max(contours, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-            if radius > 40:  # Only consider large enough objects
+            if radius > 10:  # Only consider large enough objects
                 # Draw a circle around the yellow ball
                 # cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
                 cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)
-                print(f"({int(x)}, {int(y)})")
+                print(f"(Detected = {detected}, {int(x)}, {int(y)})")
+        else:
+            detected = 0
+            print(f"(Detected = {detected}, {int(x)}, {int(y)})")
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
@@ -125,15 +132,14 @@ def SendData():
         sleep(0.002)
 
     # Delay 20ms between a full set transmissions
-    sleep(0.045)
+    sleep(0.02)
 
     
 def PID(setpointX, setpointY):
     global error, errorPrev, integr, deriv, out, speed, speedPrev, pos, prevT
     
     
-    if x != 0:
-        detected = 1
+    if detected == 1:
         
         # Calculate PID values for X and Y
         for i in range(2):
@@ -147,20 +153,15 @@ def PID(setpointX, setpointY):
             #deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
             out[i] = kp * error[i] + ki * integr[i] + kd * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
+            
+        pos[0] = round((angOrig - theta(A,4.5,-out[0],-out[1])) * angToStep)
+        pos[1] = round((angOrig - theta(B,4.5,-out[0],-out[1]))* angToStep)
+        pos[2] = round((angOrig - theta(C,4.5,-out[0],-out[1])) * angToStep)
      
     else:
         # Delay and re-check for ball detection
         time.sleep(0.01)  # 10 millis delay
         
-        if x == 0:
-            detected = 0
-    
-    if detected == 1:
-        pos[0] = round((angOrig - theta(A,4.5,-out[0],-out[1])) * angToStep)
-        pos[1] = round((angOrig - theta(B,4.5,-out[0],-out[1]))* angToStep)
-        pos[2] = round((angOrig - theta(C,4.5,-out[0],-out[1])) * angToStep)
-    else:
-        print(f"detected=0 | ({int(x)}, {int(y)})")
         pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
         pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep)
         pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep)
@@ -168,7 +169,6 @@ def PID(setpointX, setpointY):
 #     print(f"pos[0] = {pos[0]}")
 #     print(f"pos[1] = {pos[1]}")
 #     print(f"pos[2] = {pos[2]}")
-    
     SendData()
    
 
@@ -216,4 +216,3 @@ def theta(leg, hz, nx, ny):
 
 if __name__ == '__main__':
     detect_yellow_ball()
-
