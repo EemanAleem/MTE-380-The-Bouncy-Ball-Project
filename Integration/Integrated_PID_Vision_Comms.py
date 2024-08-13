@@ -12,43 +12,48 @@ import struct
 addr = 0x8 # bus address
 bus = SMBus(1) # indicates /dev/i2c-1
 
-
-# Global variables initialization
-error = [0.0, 0.0]
-errorPrev = [0.0, 0.0]
-integr = [0.0, 0.0]
-deriv = [0.0, 0.0]
-out = [0.0, 0.0]
-speed = [0, 0, 0]
-speedPrev = [0, 0, 0]
-pos = [0, 0, 0]
-
-# Constants
-angToStep = 6400 / 360
-angOrig = 204.0
-Xoffset = 240  # Replace with actual X offset value
-Yoffset = 240  # Replace with actual Y offset value
-kp = 2E-4 #4E-4   Replace with actual proportional gain
-ki = 5E-6 #2E-6  # Replace with actual integral gain
-kd = 2E-3 #7E-3  # Replace with actual derivative gain
-
-A = 0  # Index for stepper A
-B = 1  # Index for stepper B
-C = 2  # Index for stepper C
+# GLOBAL ************************************************************
+# PID:
+global error = [0.0, 0.0]
+global errorPrev = [0.0, 0.0]
+global integr = [0.0, 0.0]
+global deriv = [0.0, 0.0]
+global out = [0.0, 0.0]
+global speed = [0, 0, 0]
+global speedPrev = [0, 0, 0]
+global pos = [0, 0, 0]
+global prevT = 0
 
 #real-time coordinates
-x = 0
-y = 0
+global x = 0
+global y = 0
+
+# Checks whether the ball is present on the platform or not
+global detected = 0
 
 # What point on the platform do we want the ball to remain at?
-setpointX = 0
-setpointY = 0
+global setpointX = 0
+global setpointY = 0
+
+# CONSTANTS ***********************************************************
+global PI = math.pi
+global ANG_TO_STEP = 6400 / 360
+global ANG_ORIG = 204.0
+global X_OFFSET = 240  # Replace with actual X offset value
+global Y_OFFSET = 240  # Replace with actual Y offset value
+global KP = 0.00015 #4E-4   Replace with actual proportional gain
+global KI = 0.0001 #2E-6  # Replace with actual integral gain
+global KD = 0.000001 #7E-3  # Replace with actual derivative gain
+
+global A = 0  # Index for stepper A
+global B = 1  # Index for stepper B
+global C = 2  # Index for stepper C
 
 sleep(5)
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
-    global x, y # Declare x and y as global variables
+#     global x, y, detected # Declare said variables as global variables
   
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
@@ -81,14 +86,18 @@ def detect_yellow_ball():
 
         # Find the index of the largest contour
         if contours:
+            detected = 1
             largest_contour = max(contours, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-            if radius > 40:  # Only consider large enough objects
+            if radius > 10:  # Only consider large enough objects
                 # Draw a circle around the yellow ball
                 # cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
                 cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)
-                print(f"({int(x)}, {int(y)})")
+                print(f"(Detected = {detected}, {int(x)}, {int(y)})")
+        else:
+            detected = 0
+            print(f"(Detected = {detected}, {int(x)}, {int(y)})")
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
@@ -125,57 +134,42 @@ def SendData():
         sleep(0.002)
 
     # Delay 20ms between a full set transmissions
-    sleep(0.045)
+    sleep(0.02)
 
     
 def PID(setpointX, setpointY):
-    global error, errorPrev, integr, deriv, out, speed, speedPrev, pos
-    
-    A_CurrentPosition = 0
-    B_CurrentPosition = 0
-    C_CurrentPosition = 0
-    
-    if x != 0:
-        detected = 1
+#     global error, errorPrev, integr, deriv, out, speed, speedPrev, pos
+
+    if detected == 1:
         
         # Calculate PID values for X and Y
         for i in range(2):
+            currT = time.time()
+            deltaT = currT - prevT
+            prevT = currT
             errorPrev[i] = error[i]
-            error[i] = (x - Xoffset - setpointX) if i == 0 else (Yoffset - y - setpointY)
-            integr[i] += error[i] + errorPrev[i]
-            deriv[i] = error[i] - errorPrev[i]
-            deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
-            out[i] = kp * error[i] + ki * integr[i] + kd * deriv[i]
+            error[i] = (x - X_OFFSET - setpointX) if i == 0 else (Y_OFFSET - y - setpointY)
+            integr[i] += error[i] + errorPrev[i] * deltaT
+            deriv[i] = (error[i] - errorPrev[i]) / deltaT
+            #deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
+            out[i] = KP * error[i] + KI * integr[i] + KD * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
+            
+        pos[0] = round((ANG_ORIG - theta(A,4.5,-out[0],-out[1])) * ANG_TO_STEP)
+        pos[1] = round((ANG_ORIG - theta(B,4.5,-out[0],-out[1]))* ANG_TO_STEP)
+        pos[2] = round((ANG_ORIG - theta(C,4.5,-out[0],-out[1])) * ANG_TO_STEP)
      
     else:
         # Delay and re-check for ball detection
         time.sleep(0.01)  # 10 millis delay
         
-        if x == 0:
-            detected = 0
-    
-    if detected == 1:
-        pos[0] = round((angOrig - theta(A,4.5,-out[0],-out[1])) * angToStep)
-        pos[1] = round((angOrig - theta(B,4.5,-out[0],-out[1]))* angToStep)
-        pos[2] = round((angOrig - theta(C,4.5,-out[0],-out[1])) * angToStep)
-        
-        speed[A] = A_CurrentPosition
-        speed[B] = B_CurrentPosition
-        speed[C] = C_CurrentPosition
-    else:
-        print(f"detected=0 | ({int(x)}, {int(y)})")
-        pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep)
-        pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep)
-        speed[A] = 800
-        speed[B] = 800
-        speed[C] = 800
+        pos[0] = round((ANG_ORIG - theta(A,4.5,0,0)) * ANG_TO_STEP)
+        pos[1] = round((ANG_ORIG - theta(B,4.5,0,0)) * ANG_TO_STEP)
+        pos[2] = round((ANG_ORIG - theta(C,4.5,0,0)) * ANG_TO_STEP)
 
 #     print(f"pos[0] = {pos[0]}")
 #     print(f"pos[1] = {pos[1]}")
 #     print(f"pos[2] = {pos[2]}")
-    
     SendData()
    
 
@@ -223,5 +217,4 @@ def theta(leg, hz, nx, ny):
 
 if __name__ == '__main__':
     detect_yellow_ball()
-
 
