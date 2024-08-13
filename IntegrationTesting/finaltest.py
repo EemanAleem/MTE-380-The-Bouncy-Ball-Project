@@ -13,45 +13,48 @@ addr = 0x8 # bus address
 bus = SMBus(1) # indicates /dev/i2c-1
 
 
-# Global variables initialization
-error = [0.0, 0.0]
-errorPrev = [0.0, 0.0]
-integr = [0.0, 0.0]
-deriv = [0.0, 0.0]
-out = [0.0, 0.0]
-speed = [0, 0, 0]
-speedPrev = [0, 0, 0]
-pos = [0, 0, 0]
-prevT = 0
-# Constants
-angToStep = 6400 / 360
-angOrig = 204.0
-Xoffset = 240  # Replace with actual X offset value
-Yoffset = 240  # Replace with actual Y offset value
-kp = 0.00015 #4E-4   Replace with actual proportional gain
-ki = 0.0001 #2E-6  # Replace with actual integral gain
-kd = 0.000001 #7E-3  # Replace with actual derivative gain
-
-A = 0  # Index for stepper A
-B = 1  # Index for stepper B
-C = 2  # Index for stepper C
+# GLOBAL ************************************************************
+# PID:
+global error = [0.0, 0.0]
+global errorPrev = [0.0, 0.0]
+global integr = [0.0, 0.0]
+global deriv = [0.0, 0.0]
+global out = [0.0, 0.0]
+global speed = [0, 0, 0]
+global speedPrev = [0, 0, 0]
+global pos = [0, 0, 0]
+global prevT = 0
 
 #real-time coordinates
-x = 0
-y = 0
+global x = 0
+global y = 0
 
 # Checks whether the ball is present on the platform or not
-detected = 0
+global detected = 0
 
 # What point on the platform do we want the ball to remain at?
-setpointX = 0
-setpointY = 0
+global setpointX = 0
+global setpointY = 0
+
+# CONSTANTS ***********************************************************
+global PI = math.pi
+global ANG_TO_STEP = 6400 / 360
+global ANG_ORIG = 204.0
+global X_OFFSET = 240  # Replace with actual X offset value
+global Y_OFFSET = 240  # Replace with actual Y offset value
+global KP = 0.00015 #4E-4   Replace with actual proportional gain
+global KI = 0.0001 #2E-6  # Replace with actual integral gain
+global KD = 0.000001 #7E-3  # Replace with actual derivative gain
+
+global A = 0  # Index for stepper A
+global B = 1  # Index for stepper B
+global C = 2  # Index for stepper C
 
 sleep(5)
 
 # Define a function to detect a yellow ball
 def detect_yellow_ball():
-    global x, y, detected # Declare said variables as global variables
+#     global x, y, detected # Declare said variables as global variables
   
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
@@ -136,7 +139,7 @@ def SendData():
 
     
 def PID(setpointX, setpointY):
-    global error, errorPrev, integr, deriv, out, speed, speedPrev, pos, prevT
+#     global detectederror, errorPrev, integr, deriv, out, speed, speedPrev, pos, prevT
     
     
     if detected == 1:
@@ -147,24 +150,24 @@ def PID(setpointX, setpointY):
             deltaT = currT - prevT
             prevT = currT
             errorPrev[i] = error[i]
-            error[i] = (x - Xoffset - setpointX) if i == 0 else (Yoffset - y - setpointY)
+            error[i] = (x - X_OFFSET - setpointX) if i == 0 else (Y_OFFSET - y - setpointY)
             integr[i] += error[i] + errorPrev[i] * deltaT
             deriv[i] = (error[i] - errorPrev[i]) / deltaT
             #deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
-            out[i] = kp * error[i] + ki * integr[i] + kd * deriv[i]
+            out[i] = KP * error[i] + KI * integr[i] + KD * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
             
-        pos[0] = round((angOrig - theta(A,4.5,-out[0],-out[1])) * angToStep)
-        pos[1] = round((angOrig - theta(B,4.5,-out[0],-out[1]))* angToStep)
-        pos[2] = round((angOrig - theta(C,4.5,-out[0],-out[1])) * angToStep)
+        pos[0] = round((ANG_ORIG - theta(A,4.5,-out[0],-out[1])) * ANG_TO_STEP)
+        pos[1] = round((ANG_ORIG - theta(B,4.5,-out[0],-out[1]))* ANG_TO_STEP)
+        pos[2] = round((ANG_ORIG - theta(C,4.5,-out[0],-out[1])) * ANG_TO_STEP)
      
     else:
         # Delay and re-check for ball detection
         time.sleep(0.01)  # 10 millis delay
         
-        pos[0] = round((angOrig - theta(A,4.5,0,0)) * angToStep)
-        pos[1] = round((angOrig - theta(B,4.5,0,0)) * angToStep)
-        pos[2] = round((angOrig - theta(C,4.5,0,0)) * angToStep)
+        pos[0] = round((ANG_ORIG - theta(A,4.5,0,0)) * ANG_TO_STEP)
+        pos[1] = round((ANG_ORIG - theta(B,4.5,0,0)) * ANG_TO_STEP)
+        pos[2] = round((ANG_ORIG - theta(C,4.5,0,0)) * ANG_TO_STEP)
 
 #     print(f"pos[0] = {pos[0]}")
 #     print(f"pos[1] = {pos[1]}")
@@ -173,8 +176,6 @@ def PID(setpointX, setpointY):
    
 
 def theta(leg, hz, nx, ny):
-    PI = math.pi
-    
     # create unit normal vector
     nmag = math.sqrt(nx**2 + ny**2 + 1)  # magnitude of the normal vector
     nx /= nmag
