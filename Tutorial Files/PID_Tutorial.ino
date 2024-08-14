@@ -1,8 +1,8 @@
 #include <AccelStepper.h>
 
-const int enPin = 2; //enable Pin
-const int dirPin = 4; //direction Pin
+const int dirPin = 2; //direction Pin
 const int stepPin = 3; //pulse Pin
+const int enPin = 4; //enable Pin
 
 // PID constants (students can edit these to adjust accuracy)
 float kp = 1; //*1
