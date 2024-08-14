@@ -35,9 +35,10 @@ void loop() {
 
 void PID() {
 
-  int target = 100 * 1023 / 270; // *4 This is the target step we wish to achieve
-  target = constrain(target, 0, 1023);
-  Serial.print(target); //print out the target
+float target = 100.0 * 1023 / 270; // *4 This is the target step we wish to achieve
+ // target = constrain(target, 0, 1023);
+  Serial.print("target "); //print out the 
+  Serial.print(target); 
   Serial.print(",");
 
   // Find time difference
@@ -46,8 +47,11 @@ void PID() {
   prevT = currT; //reset current time
 
   // PID calculation
+  Serial.print("potenValue ");
   Serial.print(analogRead(A0)); //print out the target
   Serial.print(",");
+
+
   int error = target - analogRead(A0);
   integral = integral + error*deltaT;
   float derivative = (error - errorPrev)/(deltaT);
@@ -58,24 +62,24 @@ void PID() {
   if (integral < MIN_INTEGRAL) integral = MIN_INTEGRAL;
 
   // control signal
-  output = kp*error + kd*derivative + ki*integral;
+  float output = kp*error + kd*derivative + ki*integral;
+  Serial.print("output "); //print 
   Serial.print(output); //print output
   Serial.print(",");
 
-  //stepper.setSpeed(output);
-  int stepperTarget = output * 270 / 1023 * 3200 / 360;
-  Serial.print(stepperTarget);
+  float stepperTarget = ((((output * 270) / 1023) * 3200) / 360);
+  Serial.print("stepperTarget ");
+  Serial.println(stepperTarget);
   stepper.move(stepperTarget);
  long currT2 = millis();
- while (analogRead(A0) < 1023 && analogRead(A0) >0 && (millis() - currT2) < 1000) {
+ while (analogRead(A0) < 1022 && analogRead(A0) > 1 && (millis() - currT2) < 1000) {
     //  Serial.print((millis() - currT2));
     //  Serial.print(","); 
-    // Serial.print(stepper.currentPosition());
+    //  Serial.print(stepper.currentPosition());
     //  Serial.println();
       stepper.setSpeed(stepperTarget);
       stepper.runSpeed();
  }
 
-  //Serial.print(stepper.currentPosition()); //print stepper position
   //Serial.println(); 
 }
