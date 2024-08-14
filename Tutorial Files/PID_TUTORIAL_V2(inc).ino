@@ -1,13 +1,13 @@
 #include <AccelStepper.h>
 
-const int dirPin = 2; //direction Pin
+const int enPin = 2; //enable Pin
+const int dirPin = 4; //direction Pin
 const int stepPin = 3; //pulse Pin
-const int enPin = 4; //enable Pin
 
 int directionMultiplier = 1;
 // PID constants (students can edit these to adjust accuracy)
 float kp = 1; //*1
-float kd = 0; //*2
+float kd = 0.025; //*2
 float ki = 0; //*3
 int output = 0; //output from PID algorithm
 
@@ -25,6 +25,7 @@ float integral = 0; //integral term
 void setup() {
   Serial.begin(9600);
   stepper.disableOutputs(); // Disable outputs initially
+  stepper.setMaxSpeed(10000);
   stepper.setCurrentPosition(0); //zero current stepper position
   stepper.enableOutputs();
 }
@@ -35,8 +36,8 @@ void loop() {
 
 void PID() {
 
-float target = 100.0 * 1023 / 270; // *4 This is the target step we wish to achieve
- // target = constrain(target, 0, 1023);
+  float target = 135.0 * 1023 / 270; // *4 This is the target step we wish to achieve
+  target = constrain(target, 0, 1023);
   Serial.print("target "); //print out the 
   Serial.print(target); 
   Serial.print(",");
@@ -67,17 +68,18 @@ float target = 100.0 * 1023 / 270; // *4 This is the target step we wish to achi
   Serial.print(output); //print output
   Serial.print(",");
 
-  float stepperTarget = ((((output * 270) / 1023) * 3200) / 360);
+  float stepperTarget = round(((((output * 270) / 1023) * 3200) / 360));
+  stepperTarget = (constrain(stepperTarget, -2400, 2500));
   Serial.print("stepperTarget ");
   Serial.println(stepperTarget);
   stepper.move(stepperTarget);
  long currT2 = millis();
- while (analogRead(A0) < 1022 && analogRead(A0) > 1 && (millis() - currT2) < 1000) {
+ while (analogRead(A0) < 1023 && analogRead(A0) > 0 && (millis() - currT2) < 50) {
     //  Serial.print((millis() - currT2));
     //  Serial.print(","); 
     //  Serial.print(stepper.currentPosition());
     //  Serial.println();
-      stepper.setSpeed(stepperTarget);
+      stepper.setSpeed(2 * stepperTarget);
       stepper.runSpeed();
  }
 
