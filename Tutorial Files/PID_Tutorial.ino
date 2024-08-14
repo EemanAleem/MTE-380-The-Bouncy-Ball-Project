@@ -35,7 +35,6 @@ void loop() {
 
 void PID() {
 
-  targetDe
   float target = 135.0 * 1023.0 / 270; // *4 This is the target step we wish to achieve converting from degrees to POT ticks.
   target = constrain(target, 0, 1023); //contrains target to the min/max POT ticks
   Serial.print("target "); //prints out the target
@@ -76,8 +75,8 @@ void PID() {
 
   // Moves motors for a certain time before repeating PID calculations
   long currT2 = millis();
-  while (analogRead(A0) < 1023 && analogRead(A0) > 0 && (millis() - currT2) < 50) { // 4* the period of motor movement can be adjusted
-      stepper.setSpeed(2 * stepperTarget); //5* sets motor speed
+  while (analogRead(A0) < 1023 && analogRead(A0) > 0 && (millis() - currT2) < 50) { // *4 the period of motor movement can be adjusted
+      stepper.setSpeed(2 * stepperTarget); //*6 sets motor speed
       stepper.runSpeed(); //steps the motor
  }
 }
