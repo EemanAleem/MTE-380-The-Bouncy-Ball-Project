@@ -77,5 +77,4 @@ void receiveEvent(int howMany) {
 }
 
 void loop() {
-  delay(100); // Or add a delay between transmissions here *2
 }
