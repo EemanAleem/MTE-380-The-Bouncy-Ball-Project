@@ -35,15 +35,21 @@ detected = 0
 setpointX = 0
 setpointY = 0
 
+# Period of oscillation calculations for Ziegler-Nichols tuning
+last_cross_time_x = None
+last_cross_time_y = None
+period_x = None
+period_y = None
+
 # CONSTANTS ***********************************************************
 PI = math.pi
 ANG_TO_STEP = 6400 / 360
 ANG_ORIG = 204.0
 X_OFFSET = 240  # Replace with actual X offset value
 Y_OFFSET = 240  # Replace with actual Y offset value
-KP = 0.00015 #4E-4   Replace with actual proportional gain
-KI = 0.0001 #2E-6  # Replace with actual integral gain
-KD = 0.000001 #7E-3  # Replace with actual derivative gain
+KP = 2.1E-4 #2.1E-4   Replace with actual proportional gain
+KI = 0 #2E-6  # Replace with actual integral gain
+KD = 0 #4.8E-5  # Replace with actual derivative gain
 
 A = 0  # Index for stepper A
 B = 1  # Index for stepper B
@@ -75,8 +81,8 @@ def detect_yellow_ball():
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Define the range of yellow color in HSV
-        lower_yellow = np.array([20, 100, 100])
-        upper_yellow = np.array([30, 255, 255])
+        lower_yellow = np.array([27, 160, 100])
+        upper_yellow = np.array([33, 255, 255])
 
         # Threshold the HSV image to get only yellow colors
         mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
@@ -89,15 +95,15 @@ def detect_yellow_ball():
             detected = 1
             largest_contour = max(contours, key=cv2.contourArea)
             ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-            if radius > 10:  # Only consider large enough objects
+            if  radius > 10:  # Only consider large enough objects
                 # Draw a circle around the yellow ball
                 # cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
                 cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)
-                print(f"(Detected = {detected}, {int(x)}, {int(y)})")
+#                 print(f"(Detected = {detected}, {int(x)}, {int(y)})")
         else:
             detected = 0
-            print(f"(Detected = {detected}, {int(x)}, {int(y)})")
+#             print(f"(Detected = {detected}, {int(x)}, {int(y)})")
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
@@ -108,6 +114,10 @@ def detect_yellow_ball():
 
         # Break the loop when 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
+            pos[0] = 400
+            pos[1] = 400
+            pos[2] = 400
+            SendData()
             break
 
     # Release the capture when everything is done
@@ -139,18 +149,37 @@ def SendData():
     
 def PID(setpointX, setpointY):
     global error, errorPrev, integr, deriv, out, speed, speedPrev, pos, prevT
+    global last_cross_time_x, last_cross_time_y, period_x, period_y
 
     if detected == 1:
         
         # Calculate PID values for X and Y
         for i in range(2):
+            currT = time.time()
+            deltaT = currT - prevT
+            prevT = currT
             errorPrev[i] = error[i]
             error[i] = (x - X_OFFSET - setpointX) if i == 0 else (Y_OFFSET - y - setpointY)
-            integr[i] += error[i] + errorPrev[i]
-            deriv[i] = error[i] - errorPrev[i]
+#             integr[i] += error[i] + errorPrev[i] #
+#             deriv[i] = error[i] - errorPrev[i] #
+            integr[i] += (error[i] + errorPrev[i]) * deltaT
+            deriv[i] = (error[i] - errorPrev[i]) / deltaT
             deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
             out[i] = KP * error[i] + KI * integr[i] + KD * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
+            
+#             if error[i]<0<errorPrev[i] or errorPrev[i]<0<error[i]:
+#                 current_time = time.time()
+#                 if i == 0:
+#                     if last_cross_time_x is not None:
+#                         period_x = current_time - last_cross_time_x
+#                         print(f"Period X: {period_x} seconds")
+#                     last_cross_time_x = current_time
+#                 else:
+#                     if last_cross_time_y is not None:
+#                         period_y = current_time - last_cross_time_y
+#                         print(f"Period Y: {period_y} seconds")
+#                     last_cross_time_y = current_time
             
         pos[0] = round((ANG_ORIG - theta(A,4.5,-out[0],-out[1])) * ANG_TO_STEP)
         pos[1] = round((ANG_ORIG - theta(B,4.5,-out[0],-out[1]))* ANG_TO_STEP)
@@ -214,4 +243,3 @@ def theta(leg, hz, nx, ny):
 
 if __name__ == '__main__':
     detect_yellow_ball()
-
