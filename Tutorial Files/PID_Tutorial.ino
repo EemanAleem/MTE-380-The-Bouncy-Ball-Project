@@ -4,7 +4,6 @@ const int enPin = 2; //enable Pin
 const int dirPin = 4; //direction Pin
 const int stepPin = 3; //pulse Pin
 
-int directionMultiplier = 1;
 // PID constants (students can edit these to adjust accuracy)
 float kp = 1; //*1
 float kd = 0.025; //*2
@@ -17,17 +16,17 @@ long prevT = 0; //previous time
 float errorPrev = 0; //previous error
 
 // Define maximum and minimum integral limits
-const float MAX_INTEGRAL = 100.0; // Maximum integral limit
-const float MIN_INTEGRAL = -100.0; // Minimum integral limit
+const float MAX_INTEGRAL = 100.0; //maximum integral limit
+const float MIN_INTEGRAL = -100.0; //minimum integral limit
 
 float integral = 0; //integral term
 
 void setup() {
   Serial.begin(9600);
-  stepper.disableOutputs(); // Disable outputs initially
+  stepper.disableOutputs(); //disable outputs initially
   stepper.setMaxSpeed(10000);
   stepper.setCurrentPosition(0); //zero current stepper position
-  stepper.enableOutputs();
+  stepper.enableOutputs(); //enable outputs for motor
 }
 
 void loop() {
@@ -36,9 +35,10 @@ void loop() {
 
 void PID() {
 
-  float target = 135.0 * 1023 / 270; // *4 This is the target step we wish to achieve
-  target = constrain(target, 0, 1023);
-  Serial.print("target "); //print out the 
+  targetDe
+  float target = 135.0 * 1023.0 / 270; // *4 This is the target step we wish to achieve converting from degrees to POT ticks.
+  target = constrain(target, 0, 1023); //contrains target to the min/max POT ticks
+  Serial.print("target "); //prints out the target
   Serial.print(target); 
   Serial.print(",");
 
@@ -47,12 +47,12 @@ void PID() {
   float deltaT = ((float) (currT - prevT))/( 1.0e6 ); //determine change in time
   prevT = currT; //reset current time
 
-  // PID calculation
-  Serial.print("potenValue ");
-  Serial.print(analogRead(A0)); //print out the target
+  
+  Serial.print("potenValue "); //print out the POT value
+  Serial.print(analogRead(A0)); 
   Serial.print(",");
 
-
+  // PID calculation
   int error = target - analogRead(A0);
   integral = integral + error*deltaT;
   float derivative = (error - errorPrev)/(deltaT);
@@ -62,26 +62,22 @@ void PID() {
   if (integral > MAX_INTEGRAL) integral = MAX_INTEGRAL;
   if (integral < MIN_INTEGRAL) integral = MIN_INTEGRAL;
 
-  // control signal
-  float output = kp*error + kd*derivative + ki*integral;
-  Serial.print("output "); //print 
-  Serial.print(output); //print output
+  // Control signal
+  float output = kp*error + kd*derivative + ki*integral; //PID output (In POT ticks)
+  Serial.print("output "); //prints output
+  Serial.print(output); 
   Serial.print(",");
 
-  float stepperTarget = round(((((output * 270) / 1023) * 3200) / 360));
-  stepperTarget = (constrain(stepperTarget, -2400, 2500));
-  Serial.print("stepperTarget ");
+  float stepperTarget = round(((((output * 270) / 1023) * 3200) / 360)); //converts POT ticks to steps as motor is set to 3200 steps/revolution
+  stepperTarget = (constrain(stepperTarget, -2400, 2400)); //clamps error down too maximum movable steps based on POT
+  Serial.print("stepperTarget "); //prints motor's target steps
   Serial.println(stepperTarget);
   stepper.move(stepperTarget);
- long currT2 = millis();
- while (analogRead(A0) < 1023 && analogRead(A0) > 0 && (millis() - currT2) < 50) {
-    //  Serial.print((millis() - currT2));
-    //  Serial.print(","); 
-    //  Serial.print(stepper.currentPosition());
-    //  Serial.println();
-      stepper.setSpeed(2 * stepperTarget);
-      stepper.runSpeed();
- }
 
-  //Serial.println(); 
+  // Moves motors for a certain time before repeating PID calculations
+  long currT2 = millis();
+  while (analogRead(A0) < 1023 && analogRead(A0) > 0 && (millis() - currT2) < 50) { // 4* the period of motor movement can be adjusted
+      stepper.setSpeed(2 * stepperTarget); //5* sets motor speed
+      stepper.runSpeed(); //steps the motor
+ }
 }
