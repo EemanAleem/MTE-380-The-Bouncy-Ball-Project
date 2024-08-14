@@ -10,7 +10,7 @@ const int SCL_Pin = 21;
 // receivedValue is two bytes combined with a bitwise operation to get an integer in the range 0 to 65,534.
 volatile long int receivedByte, receivedValue;
 volatile int byte1, byte2;
-volatile long int steps[3];
+volatile long int pos[3];
 volatile unsigned long long int countByte = 1, countValue = 1;
  
 void setup() {
@@ -53,19 +53,19 @@ void receiveEvent(int howMany) {
     // The other conditions follow the same logic as the first. 
     // This is needed to accurately determine what transmission is slotted for what array value.
     if ( (countValue - 1) % 3 == 0 ) {
-      steps[0] = receivedValue;
-      Serial.print("steps[0]: ");
-      Serial.println(steps[0]);
+      pos[0] = receivedValue;
+      Serial.print("pos[0]: ");
+      Serial.println(pos[0]);
     }
     else if ( (countValue - 2) % 3 == 0 ) {
-      steps[1] = receivedValue;
-      Serial.print("steps[1]: ");
-      Serial.println(steps[1]);
+      pos[1] = receivedValue;
+      Serial.print("pos[1]: ");
+      Serial.println(pos[1]);
     }
     else {
-      steps[2] = receivedValue;
-      Serial.print("steps[2]: ");
-      Serial.println(steps[2]);
+      pos[2] = receivedValue;
+      Serial.print("pos[2]: ");
+      Serial.println(pos[2]);
     }
     // Increment the Value counter.
     countValue++;
