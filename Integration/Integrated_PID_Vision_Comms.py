@@ -162,9 +162,9 @@ def PID(setpointX, setpointY):
             error[i] = (x - X_OFFSET - setpointX) if i == 0 else (Y_OFFSET - y - setpointY)
             integr[i] += (error[i] + errorPrev[i]) * deltaT
             deriv[i] = (error[i] - errorPrev[i]) / deltaT
-            deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
+            deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i] # replaces NaN and infinite values with 0
             out[i] = KP * error[i] + KI * integr[i] + KD * deriv[i]
-            out[i] = max(-0.25, min(0.25, out[i]))
+            out[i] = max(-0.25, min(0.25, out[i])) # clamps output
 
 # The following block is used in finding the time period for the Ziegler Nichols Tuning Method            
 #             if error[i]<0<errorPrev[i] or errorPrev[i]<0<error[i]:
@@ -203,6 +203,8 @@ def theta(leg, hz, nx, ny):
     
     # create unit normal vector
     nmag = math.sqrt(nx**2 + ny**2 + 1)  # magnitude of the normal vector
+    
+    # xyz of vector
     nx /= nmag
     ny /= nmag
     nz = 1 / nmag
@@ -213,21 +215,21 @@ def theta(leg, hz, nx, ny):
     d = 2.0 # distance from the center of the base to any of its corners
     e = 3.125 # distance from the center of the platform to any of its corners
     f = 1.75 # length of link #1
-    g = 4.0 #length of link #2
+    g = 4.0 # length of link #2
     
     # calculates angle A, B, or C
-    if leg == A:  # Leg A
+    if leg == A:  # finds the yz position and angle of Leg A (X position is constant)
         yPOS = d + (e / 2) * (1 - (nx**2 + 3 * nz**2 + 3 * nz) / (nz + 1 - nx**2 + (nx**4 - 3 * nx**2 * ny**2) / ((nz + 1) * (nz + 1 - nx**2))))
         zPOS = hz + e * ny
         mag = math.sqrt(yPOS**2 + zPOS**2)
         angle = math.acos(yPOS / mag) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
-    elif leg == B:  # Leg B
+    elif leg == B:  # finds the xyz position of Leg B
         xPOS = (math.sqrt(3) / 2) * (e * (1 - (nx**2 + math.sqrt(3) * nx * ny) / (nz + 1)) - d)
         yPOS = xPOS / math.sqrt(3)
         zPOS = hz - (e / 2) * (math.sqrt(3) * nx + ny)
         mag = math.sqrt(xPOS**2 + yPOS**2 + zPOS**2)
         angle = math.acos((math.sqrt(3) * xPOS + yPOS) / (-2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
-    elif leg == C:  # Leg C
+    elif leg == C:  # Finds the xyz position of Leg C
         xPOS = (math.sqrt(3) / 2) * (d - e * (1 - (nx**2 - math.sqrt(3) * nx * ny) / (nz + 1)))
         yPOS = -xPOS / math.sqrt(3)
         zPOS = hz + (e / 2) * (math.sqrt(3) * nx - ny)
