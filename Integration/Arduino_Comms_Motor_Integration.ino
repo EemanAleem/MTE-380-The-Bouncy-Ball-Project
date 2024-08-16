@@ -22,6 +22,7 @@ const int MAX_STEPPERS = 3;
 const int STEP_PINS[MAX_STEPPERS] = {3, 6, 9};   // Step pins for motors 1, 2, 3
 const int DIR_PINS[MAX_STEPPERS] = {4, 7, 10};    // Direction pins for motors 1, 2, 3
 const int ks = 1; //speed amplifying constant
+const int ka = 2; //acceleration amplifiying constant
 bool allAtPosition = false;
 
 // Create instances of AccelStepper for each motor
@@ -51,14 +52,9 @@ void setup() {
 
   // Set maximum speed and acceleration for each stepper motor
   for (int i = 0; i < MAX_STEPPERS; i++) {
-    steppers[i].setMaxSpeed(100000); // Speed = Steps / second
+    steppers[i].setMaxSpeed(5000); // Speed = Steps / second
     steppers[i].disableOutputs(); // Disable outputs initially
     steppers[i].setCurrentPosition(0); // Reset current position to 0
-    // Serial.print("Motor ");
-    // Serial.print(i + 1);
-    // Serial.print(" current position: ");
-    // Serial.println(steppers[i].currentPosition());
-    // Serial.print(pos[i]);
   }
   
   home();
@@ -115,15 +111,13 @@ void receiveEvent() {
     int2 = receivedByte;
 
     // Combine bytes to get a long int
-    receivedValue = (int1 << 8) | int2;
+    receivedValue = ((int1 << 8) | int2);
 
     // Sort value received into the pos[3] array
     if ( (countValue - 1) % 3 == 0 ) {
       pos[0] = receivedValue;
       // Serial.print("pos[0]: ");
       // Serial.println(pos[0]);
-      // for (int i = 0; i < MAX_STEPPERS; i++) {
-      //   steppers[i].stop();
     }
     else if ( (countValue - 2) % 3 == 0 ) {
       pos[1] = receivedValue;
@@ -147,31 +141,20 @@ void receiveEvent() {
 void moveMotors()
 {
   // Serial.println("In movemotors");
-  for (int i = 0; i < MAX_STEPPERS; i++) {
-    // steppers[i].enableOutputs();
-    // steppers[i].setMaxSpeed(speed[i]);
-    // steppers[i].setAcceleration(speed[i] * 30);
+  for (int i = 0; i < MAX_STEPPERS; i++)
     steppers[i].moveTo(-1*pos[i]);
-    // Serial.println(steppers[i].targetPosition());
-  }
-
-  // int timePrev = millis();
-  // while(millis() - timePrev < 20) {
-  //   steppers[0].run();
-  //   steppers[1].run();
-  //   steppers[2].run();
-  // }
 
   allAtPosition = false;
   while (!allAtPosition) {
     allAtPosition = true;
-    for (int i = 0; i < MAX_STEPPERS; i++)
+    for (int i = 0; i < MAX_STEPPERS; i++) {
       if (steppers[i].currentPosition() != -1*pos[i]) {
         steppers[i].run(); // Step each motor
         steppers[i].moveTo(-1*pos[i]);
         // Serial.println(steppers[i].targetPosition());
         allAtPosition = false;
       }
+    }
   }
 }
 
@@ -182,8 +165,7 @@ void setSpeed() {
     speed[i] = abs(steppers[i].currentPosition() - pos[i]) * ks; // Calculates the error in the current position and target position
     speed[i] = constrain(speed[i], speedPrev[i] - 200, speedPrev[i] + 200); // Filters speed by preventing it from being over 200 away from last speed
     speed[i] = constrain(speed[i], 0, 1000);
-    steppers[i].setMaxSpeed(speed[i]);
-    steppers[i].setAcceleration(speed[i] * 30);
+    steppers[i].setAcceleration(speed[i] * ka);
     // Serial.print("Sp: ");
     // Serial.println(speed[i]);
   }
