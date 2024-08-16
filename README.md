@@ -1,2 +1,2 @@
-# MTE-380-The-Bouncy-Ball-Project
-This project uses 3 RPS Parallel Manipulator and computor vision to control a platform to balance/bounce a ball
+# MTE-380-The-Ball-Trapper-Project
+This project uses a 3-RPS Parallel Axis Manipulator, computer vision with OpenCV, and PID controls to prevent a ball from falling off a platform, its wall-less prison.
