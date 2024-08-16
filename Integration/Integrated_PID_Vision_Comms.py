@@ -64,8 +64,6 @@ def detect_yellow_ball():
     # Start capturing video from the webcam
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS, 30)
-#     cap.set(3,600) #set width to 100
-#     cap.set(4,600) #set height to 100
 
     while True:
         # Read a frame from the webcam
@@ -75,7 +73,6 @@ def detect_yellow_ball():
             break
         
         frame = cv2.resize(frame, (480, 480))
-#         frame = frame[200:400, 200:400]
 
         # Convert the frame to HSV color space
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -100,16 +97,16 @@ def detect_yellow_ball():
                 # cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
                 # Draw a dot in the center of the yellow ball
                 cv2.circle(frame, (int(x), int(y)), 2, (0, 0, 255), -1)
+                
+# The following line displays the xy position of the ball
 #                 print(f"(Detected = {detected}, {int(x)}, {int(y)})")
         else:
             detected = 0
-#             print(f"(Detected = {detected}, {int(x)}, {int(y)})")
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
-#         0.03
+    
         sleep(0.03) 
-#         cProfile.run('PID(setpointX, setpointY)')
         PID(setpointX, setpointY)
 
         # Break the loop when 'q' is pressed
@@ -127,18 +124,21 @@ def detect_yellow_ball():
 def SendData():
     pos[0] = list(struct.pack('>h', pos[0]))
     for j in range (0,2):
+# The following comment tests if the numbers are properly split
 #         print("pos[", 0, "][", j, "]: ", pos[0][j])
         bus.write_byte(addr, pos[0][j])
         sleep(0.002)
     
     pos[1] = list(struct.pack('>h', pos[1]))
     for j in range (0,2):
+# The following comment tests if the numbers are properly split
 #         print("pos[", 1, "][", j, "]: ", pos[1][j])
         bus.write_byte(addr, pos[1][j])
         sleep(0.002)
     
     pos[2] = list(struct.pack('>h', pos[2]))
     for j in range (0,2):
+# The following comment tests if the numbers are properly split
 #         print("pos[", 2, "][", j, "]: ", pos[2][j])
         bus.write_byte(addr, pos[2][j])
         sleep(0.002)
@@ -160,14 +160,13 @@ def PID(setpointX, setpointY):
             prevT = currT
             errorPrev[i] = error[i]
             error[i] = (x - X_OFFSET - setpointX) if i == 0 else (Y_OFFSET - y - setpointY)
-#             integr[i] += error[i] + errorPrev[i] #
-#             deriv[i] = error[i] - errorPrev[i] #
             integr[i] += (error[i] + errorPrev[i]) * deltaT
             deriv[i] = (error[i] - errorPrev[i]) / deltaT
             deriv[i] = 0 if (deriv[i] != deriv[i] or abs(deriv[i]) == float('inf')) else deriv[i]
             out[i] = KP * error[i] + KI * integr[i] + KD * deriv[i]
             out[i] = max(-0.25, min(0.25, out[i]))
-            
+
+# The following block is used in finding the time period for the Ziegler Nichols Tuning Method            
 #             if error[i]<0<errorPrev[i] or errorPrev[i]<0<error[i]:
 #                 current_time = time.time()
 #                 if i == 0:
@@ -192,7 +191,7 @@ def PID(setpointX, setpointY):
         pos[0] = round((ANG_ORIG - theta(A,4.5,0,0)) * ANG_TO_STEP)
         pos[1] = round((ANG_ORIG - theta(B,4.5,0,0)) * ANG_TO_STEP)
         pos[2] = round((ANG_ORIG - theta(C,4.5,0,0)) * ANG_TO_STEP)
-
+# The following block is used for viewing the stepper positions
 #     print(f"pos[0] = {pos[0]}")
 #     print(f"pos[1] = {pos[1]}")
 #     print(f"pos[2] = {pos[2]}")
@@ -234,6 +233,8 @@ def theta(leg, hz, nx, ny):
         zPOS = hz + (e / 2) * (math.sqrt(3) * nx - ny)
         mag = math.sqrt(xPOS**2 + yPOS**2 + zPOS**2)
         angle = math.acos((math.sqrt(3) * xPOS - yPOS) / (2 * mag)) + math.acos((mag**2 + f**2 - g**2) / (2 * mag * f))
+        
+# The following block is used for viewing the angle outputs
 #     print(f"Leg {leg}:")
 #     print(f"  x = {xPOS}")
 #     print(f"  y = {yPOS}")
