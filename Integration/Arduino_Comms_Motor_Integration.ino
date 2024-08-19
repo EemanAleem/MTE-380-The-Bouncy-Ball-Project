@@ -87,9 +87,6 @@ void home() {
       }
     }
   }
-
-  // for (int i = 0; i < MAX_STEPPERS; i++)
-  //   steppers[i].setCurrentPosition(0);
 }
 
 void loop() {
